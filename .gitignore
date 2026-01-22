@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Django
+*.log
+local_settings.py
+
+# macOS
+.DS_Store
+
+# Virtualenv
+venv/
+ENV/
+.env
+
+# Node
+node_modules/
+
+# Tailwind
+static_src/
+
+# Database
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# Other
+*.swp
+*.swo
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+
+# Test
+*.test.js
+*.test.py
+
+# Static files
+staticfiles/
