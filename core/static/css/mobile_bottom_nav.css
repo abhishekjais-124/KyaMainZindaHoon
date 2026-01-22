@@ -1,0 +1,16 @@
+/* Mobile Bottom Navigation Bar Styles */
+.mobile-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-black/90 flex justify-around items-center py-2 shadow-2xl border-t border-gray-800;
+}
+.mobile-bottom-nav__item {
+  @apply flex flex-col items-center justify-center text-xs text-gray-300 hover:text-purple-400 transition-colors duration-200;
+}
+.mobile-bottom-nav__icon {
+  @apply mb-1 text-2xl md:text-3xl;
+}
+.mobile-bottom-nav__active {
+  @apply text-purple-400;
+}
+@media (min-width: 768px) {
+  .mobile-bottom-nav { display: none; }
+}

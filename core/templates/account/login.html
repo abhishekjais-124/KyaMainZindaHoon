@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+{% load socialaccount %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/login_button.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-screen px-4">
+    <h1 class="login-title text-center text-7xl font-extrabold text-white mb-12" style="font-family: 'Playfair Display', serif;">
+        <span id="word-kya" class="opacity-0 transition-opacity duration-500">Kya</span>
+        <span id="word-main" class="opacity-0 transition-opacity duration-500"> Main</span>
+        <span id="word-zinda" class="opacity-0 transition-opacity duration-500"> Zinda</span>
+        <span id="word-hoon" class="opacity-0 transition-opacity duration-500"> Hoon?</span>
+    </h1>
+    <a href="{% provider_login_url 'google' %}" class="neumorphic-button opacity-0 transition-opacity duration-0" id="google-login-btn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="w-14 h-14 mx-auto mb-2">
+    </a>
+</div>
+
+<style>
+    .transition-opacity {
+        transition-property: opacity;
+    }
+    .duration-500 {
+        transition-duration: 500ms;
+    }
+    .duration-0 {
+        transition-duration: 0ms;
+    }
+    .opacity-0 {
+        opacity: 0;
+    }
+    .opacity-100 {
+        opacity: 1;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 3 seconds total for 4 words: 0ms, 750ms, 1500ms, 2250ms
+        const delays = [0, 750, 1500, 2250];
+        const ids = ['word-kya', 'word-main', 'word-zinda', 'word-hoon'];
+        ids.forEach((id, idx) => {
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('opacity-0');
+                    el.classList.add('opacity-100');
+                }
+            }, delays[idx]);
+        });
+        // Instantly show button after 3s
+        setTimeout(() => {
+            const btn = document.getElementById('google-login-btn');
+            if (btn) {
+                btn.classList.remove('opacity-0');
+                btn.classList.add('opacity-100');
+            }
+        }, 3000);
+    });
+</script>
+{% endblock %}

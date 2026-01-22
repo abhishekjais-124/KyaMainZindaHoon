@@ -1,0 +1,361 @@
+{% extends 'core/base.html' %}
+{% block dashboard_noscroll %}
+<style>body { overflow: hidden !important; }</style>
+{% endblock %}
+{% load static %}
+
+{% block content %}
+{% include 'core/app_icon.html' %}
+<div class="w-full min-h-screen flex flex-col items-center justify-start px-12 pt-12 pb-4 gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+        <!-- Glassy Title Above Loader -->
+        <div class="flex flex-col items-center gap-6 w-full mt-2">
+            <div class="mb-1 w-full flex justify-center">
+                <span class="block text-4xl md:text-5xl font-extrabold tracking-tight text-white/90 px-8 py-4 rounded-3xl shadow-2xl border border-white/10 bg-black/40 backdrop-blur-2xl"
+                    style="background: rgba(20,20,20,0.18); font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif; letter-spacing: 0.01em;">
+                    Am I Alive?
+                </span>
+            </div>
+            <div class="relative flex items-center justify-center w-full mt-0">
+                <button id="loader-btn" class="relative w-72 h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden"
+                    style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
+                    <!-- Animated SVG Ring -->
+                    <svg class="absolute inset-0 w-full h-full" width="288" height="288" viewBox="0 0 288 288">
+                        <circle cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" opacity="0.10" />
+                        <circle id="loader-ring" cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="791.6813" stroke-dashoffset="791.6813" style="transition: stroke-dashoffset 0.18s cubic-bezier(.4,0,.2,1);" />
+                    </svg>
+                    <span id="loader-number" class="text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10">100</span>
+                    <span id="loader-tick" style="display:none;"
+                        class="absolute inset-0 flex items-center justify-center z-20">
+                        <span class="relative flex items-center justify-center w-36 h-36 md:w-40 md:h-40 rounded-full shadow-2xl border border-green-300/30 bg-gradient-to-br from-green-400/30 via-green-300/20 to-white/10 backdrop-blur-2xl animate-tick-pop">
+                            <!-- Glowing animated ring -->
+                            <span class="absolute inset-0 rounded-full pointer-events-none animate-tick-glow" style="box-shadow: 0 0 32px 8px #22ff78cc, 0 0 0 8px #22ff7833;"></span>
+                            <!-- Glass inner layer -->
+                            <span class="absolute inset-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10"></span>
+                            <!-- Stylish SVG Tick -->
+                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10">
+                                <circle cx="40" cy="40" r="36" stroke="#22ff78" stroke-width="5" fill="rgba(34,255,120,0.10)" filter="url(#tick-glow)" />
+                                <path d="M24 44L37 57L58 28" stroke="#22ff78" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#tick-glow)"/>
+                                <defs>
+                                    <filter id="tick-glow" x="-10" y="-10" width="100" height="100" filterUnits="userSpaceOnUse">
+                                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                        <feMerge>
+                                            <feMergeNode in="coloredBlur"/>
+                                            <feMergeNode in="SourceGraphic"/>
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                            </svg>
+                        </span>
+                    </span>
+                <style>
+                @keyframes tick-pop {
+                    0% { transform: scale(0.7); opacity: 0; }
+                    60% { transform: scale(1.08); opacity: 1; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+                .animate-tick-pop {
+                    animation: tick-pop 0.5s cubic-bezier(.4,0,.2,1) both;
+                }
+                @keyframes tick-glow {
+                    0%, 100% { box-shadow: 0 0 32px 8px #22ff78cc, 0 0 0 8px #22ff7833; }
+                    50% { box-shadow: 0 0 48px 16px #22ff78ee, 0 0 0 12px #22ff7855; }
+                }
+                .animate-tick-glow {
+                    animation: tick-glow 1.5s ease-in-out infinite;
+                }
+                </style>
+                </button>
+                <audio id="loader-sound" src="{% static 'sounds/checkin_sound.mp3' %}"></audio>
+            </div>
+        </div>
+
+        <!-- Status Card (Active/Warning/Danger) -->
+        {% if profile and profile.last_check_in %}
+        <div class="w-full max-w-lg mx-auto mt-4 mb-4">
+            {% if profile.is_missing %}
+                {% with status="Danger" color="red" %}
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
+                        <div>
+                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% elif profile.is_warning %}
+                {% with status="Warning" color="yellow" %}
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg"></span>
+                        <div>
+                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% else %}
+                {% with status="Active" color="green" %}
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg"></span>
+                        <div>
+                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% endif %}
+        </div>
+        {% endif %}
+        <script>
+        const loaderBtn = document.getElementById('loader-btn');
+        const loaderNumber = document.getElementById('loader-number');
+        const loaderRing = document.getElementById('loader-ring');
+        const loaderSound = document.getElementById('loader-sound');
+        let interval = null;
+        let value = 0;
+        let animating = false;
+        function setNumber(val) {
+            value = val;
+            const tick = document.getElementById('loader-tick');
+            if (val >= 100) {
+                loaderNumber.style.display = 'none';
+                if (loaderRing) loaderRing.style.display = 'none';
+                if (tick) tick.style.display = '';
+                setTimeout(() => {
+                    if (tick) tick.style.display = 'none';
+                    loaderNumber.style.display = '';
+                    setNumber(0);
+                }, 5000);
+                // Update last check-in time
+                fetch('{% url "check_in" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                }).then(() => {
+                    // Update status card without reload
+                    // Update dot to green
+                    const dot = document.getElementById('status-dot');
+                    if (dot) {
+                        dot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+                    }
+                    // Update status text to Active
+                    const statusSpan = document.getElementById('status-text');
+                    if (statusSpan) {
+                        statusSpan.textContent = 'Active';
+                    }
+                    // Update check-in text to Just now
+                    const checkInDiv = document.getElementById('check-in-time');
+                    if (checkInDiv) {
+                        checkInDiv.textContent = 'Check-in: Just now';
+                    }
+                    // Play sound
+                    loaderSound.currentTime = 0;
+                    loaderSound.play();
+                    // Vibrate
+                    if (navigator.vibrate) navigator.vibrate(200);
+                });
+                return;
+            } else {
+                if (tick) tick.style.display = 'none';
+                loaderNumber.style.display = '';
+            }
+            loaderNumber.textContent = Math.round(val);
+            // Animate SVG ring
+            if (loaderRing) {
+                // Circumference = 2 * PI * r = 2 * 3.1416 * 126 = ~791.6813
+                const circ = 2 * Math.PI * 126;
+                const percent = Math.max(0, Math.min(1, val / 100));
+                loaderRing.style.strokeDashoffset = (1 - percent) * circ;
+                // Hide only after animation completes
+                if (percent === 0) {
+                    setTimeout(() => {
+                        if (value === 0) loaderRing.style.display = 'none';
+                    }, 180); // match transition duration
+                } else {
+                    loaderRing.style.display = '';
+                }
+            }
+        }
+        function animateTo(target, duration, cb) {
+            if (interval) clearInterval(interval);
+            const start = value;
+            const diff = target - start;
+            const steps = Math.round(duration / 16);
+            let current = 0;
+            interval = setInterval(() => {
+                current++;
+                const v = start + diff * (current / steps);
+                setNumber(v);
+                if (current >= steps) {
+                    setNumber(target);
+                    clearInterval(interval);
+                    interval = null;
+                    if (cb) cb();
+                }
+            }, 16);
+        }
+        let holdTimeout = null;
+        let startTime = null;
+        let completed = false;
+        function startHold() {
+            if (animating) return;
+            completed = false;
+            startTime = Date.now();
+            animateTo(0, 0, () => {
+                animateTo(100, 1000, () => {
+                    completed = true;
+                    if (navigator.vibrate) navigator.vibrate(200);
+                });
+            });
+        }
+        function endHold() {
+            if (animating) return;
+            if (completed) return;
+            if (interval) clearInterval(interval);
+            animateTo(0, 400);
+        }
+        loaderBtn.addEventListener('mousedown', startHold);
+        loaderBtn.addEventListener('touchstart', startHold);
+        loaderBtn.addEventListener('mouseup', endHold);
+        loaderBtn.addEventListener('touchend', endHold);
+        loaderBtn.addEventListener('touchcancel', endHold);
+        setNumber(0);
+        </script>
+
+        <!-- Status Popup (Warning/Danger) -->
+        {% if profile and profile.last_check_in %}
+            {% if profile.is_missing or profile.is_warning %}
+                <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop" style="display:none;">
+                    <div class="relative bg-black/80 border border-white/10 rounded-3xl shadow-2xl px-8 py-8 flex flex-col items-center gap-4" style="min-width: 260px; max-width: 90vw;">
+                        <button onclick="closeStatusPopup()" class="absolute top-3 right-3 text-white/60 hover:text-white/90 text-2xl focus:outline-none">&times;</button>
+                        <div class="text-lg font-semibold text-white/80 mb-2 tracking-wide">
+                            {% if profile.is_missing %}
+                                <span class="text-red-400">Danger!</span>
+                            {% else %}
+                                <span class="text-yellow-300">Warning!</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-center text-white/70 text-base leading-relaxed">
+                            {% if profile.is_missing %}
+                                You have not checked in for over <b>48 hours</b>.<br>Immediate check-in is required to avoid alerting your partner!
+                            {% else %}
+                                You have not checked in for over <b>32 hours</b>.<br>Please check in soon to avoid entering danger status.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <script>
+                function closeStatusPopup() {
+                    document.getElementById('status-popup').style.display = 'none';
+                    localStorage.setItem('statusPopupShown', 'true');
+                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (!localStorage.getItem('statusPopupShown')) {
+                        setTimeout(function() {
+                            document.getElementById('status-popup').style.display = 'flex';
+                        }, 600);
+                    }
+                });
+                </script>
+            {% endif %}
+        {% endif %}
+
+</div>
+
+<meta name="csrf-token" content="{{ csrf_token }}">
+
+<style>
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.6s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+.animate-fade-in:nth-child(1) { animation-delay: 0.1s; }
+.animate-fade-in:nth-child(2) { animation-delay: 0.2s; }
+.animate-fade-in:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes pop {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    60% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-pop {
+    animation: pop 0.5s cubic-bezier(.4, 0, .2, 1) both;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+    }
+}
+
+#check-in-btn {
+    animation: pop 0.5s cubic-bezier(.4, 0, .2, 1) both, pulse-glow 2s ease-in-out infinite;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkInBtn = document.getElementById('check-in-btn');
+    
+    checkInBtn.addEventListener('click', function() {
+        // Disable button during request
+        checkInBtn.disabled = true;
+        checkInBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        
+        fetch('{% url "check_in" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success feedback
+                checkInBtn.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Check-in Successful!</span>';
+                checkInBtn.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
+                checkInBtn.classList.add('from-green-600', 'to-green-700');
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('Check-in failed. Please try again.');
+                checkInBtn.disabled = false;
+                checkInBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            checkInBtn.disabled = false;
+            checkInBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        });
+    });
+});
+</script>
+{% endblock %}

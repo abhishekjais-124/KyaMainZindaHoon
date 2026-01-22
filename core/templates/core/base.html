@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kya Main Zinda Hoon?{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {},
+            },
+        }
+    </script>
+</head>
+{% block extra_head %}{% endblock %}
+{% block dashboard_noscroll %}{% endblock %}
+</head>
+<body class="bg-gradient-to-br from-black via-gray-900 to-gray-800 min-h-screen text-white" id="body-root">
+    <div class="container mx-auto px-2 py-8 flex flex-col items-center justify-center min-h-screen">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center py-3 px-2 rounded-t-[2.5rem] mx-2 mb-2 shadow-2xl animate-fade-in"
+    style="background: rgba(20,20,20,0.22); backdrop-filter: blur(22px); border-top: 2px solid rgba(255,255,255,0.10); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);">
+    <a href="/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-home">
+        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+            <!-- Home Icon (Heroicons) -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125h3.75v-4.5a.375.375 0 01.375-.375h4.5a.375.375 0 01.375.375v4.5h3.75c.621 0 1.125-.504 1.125-1.125V9.75" />
+            </svg>
+        </span>
+        <!-- text removed -->
+    </a>
+    <button type="button" onclick="showInviteCodePopup()" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-add" style="background:none;border:none;outline:none;">
+        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+            <!-- Plus Circle Icon (Heroicons) -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+        </span>
+    </button>
+    <a href="/friends/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-friends">
+        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+            <!-- Users Icon (Heroicons) -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm6 2.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-15 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+        </span>
+        <!-- text removed -->
+    </a>
+    <a href="/profile/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-profile">
+        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+            <!-- User Circle Icon (Heroicons) -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9A3.75 3.75 0 1112 5.25 3.75 3.75 0 0115.75 9zm-9 9.75a6.75 6.75 0 1113.5 0v.375a.375.375 0 01-.375.375H7.125a.375.375 0 01-.375-.375V18.75z" />
+            </svg>
+        </span>
+        <!-- text removed -->
+    </a>
+</nav>
+<link rel="stylesheet" href="{% static 'css/mobile_bottom_nav.css' %}">
+{% if user.is_authenticated %}
+        {% include 'core/invite_code_popup.html' %}
+        {% include 'core/message_popup.html' %}
+{% endif %}
+<script>
+function showInviteCodePopup() {
+    fetch('/get_invite_code/')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('invite-code-value').innerText = data.invite_code;
+            document.getElementById('invite-code-popup').style.display = 'flex';
+        });
+}
+</script>
+</body>
+</html>

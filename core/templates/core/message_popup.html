@@ -1,0 +1,47 @@
+{% load static %}
+<!-- Success/Failure Message Popup -->
+<div id="message-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" style="display:none;">
+  <div class="relative bg-black/70 border border-white/10 rounded-3xl shadow-2xl px-8 py-8 flex flex-col items-center gap-4" style="min-width: 260px; max-width: 90vw;">
+    <button onclick="closeMessagePopup()" class="absolute top-3 right-3 text-white/60 hover:text-white/90 text-2xl focus:outline-none">
+      &times;
+    </button>
+    <div id="message-icon" class="w-16 h-16 rounded-full flex items-center justify-center mb-2">
+      <!-- Icon will be set by JS -->
+    </div>
+    <div id="message-title" class="text-lg font-semibold text-white/80 mb-2 tracking-wide"></div>
+    <div id="message-text" class="text-center text-white/70 text-sm leading-relaxed"></div>
+  </div>
+</div>
+<script>
+function showMessagePopup(success, message) {
+  const popup = document.getElementById('message-popup');
+  const icon = document.getElementById('message-icon');
+  const title = document.getElementById('message-title');
+  const text = document.getElementById('message-text');
+
+  if (success) {
+    icon.innerHTML = `
+      <svg class="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    `;
+    title.textContent = 'Success!';
+    title.className = 'text-lg font-semibold text-green-400 mb-2 tracking-wide';
+  } else {
+    icon.innerHTML = `
+      <svg class="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    `;
+    title.textContent = 'Error!';
+    title.className = 'text-lg font-semibold text-red-400 mb-2 tracking-wide';
+  }
+
+  text.textContent = message;
+  popup.style.display = 'flex';
+}
+
+function closeMessagePopup() {
+  document.getElementById('message-popup').style.display = 'none';
+}
+</script>
