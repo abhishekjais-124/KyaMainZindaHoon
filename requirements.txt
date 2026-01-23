@@ -1,3 +1,5 @@
+# For production WSGI server
+gunicorn
 arrow==1.4.0
 asgiref==3.11.0
 binaryornot==0.4.4
