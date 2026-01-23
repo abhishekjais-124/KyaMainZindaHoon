@@ -58,7 +58,7 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 LOGIN_REDIRECT_URL = '/KyaMainZindaHoon/dashboard/'
 LOGIN_URL = '/KyaMainZindaHoon/accounts/login/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -177,4 +177,4 @@ SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapt
 ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
 
 # Important for subdirectory hosting
-FORCE_SCRIPT_NAME = '/KyaMainZindaHoon'
+# FORCE_SCRIPT_NAME = '/KyaMainZindaHoon'

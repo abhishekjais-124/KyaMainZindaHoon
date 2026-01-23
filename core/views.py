@@ -131,9 +131,10 @@ def profile_view(request):
         paired_users.append(partner.user)
 
     return render(request, 'core/profile.html', {'paired_users': paired_users})
+
 def home(request):
     if not request.user.is_authenticated:
-        return redirect('account_login')
+        return render(request, 'core/home.html')
     profile = request.user.profile
     return render(request, 'core/dashboard.html', {'profile': profile})
 
