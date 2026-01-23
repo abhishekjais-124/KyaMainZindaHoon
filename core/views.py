@@ -132,9 +132,9 @@ def profile_view(request):
 
     return render(request, 'core/profile.html', {'paired_users': paired_users})
 def home(request):
-    profile = None
-    if request.user.is_authenticated:
-        profile = request.user.profile
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    profile = request.user.profile
     return render(request, 'core/dashboard.html', {'profile': profile})
 
 @login_required
