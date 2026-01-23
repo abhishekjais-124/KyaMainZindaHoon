@@ -166,3 +166,15 @@ CSRF_TRUSTED_ORIGINS = [
     "https://aj124.com",
     "https://www.aj124.com",
 ]
+
+# Force Django to know it is behind a proxy and using HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Ensure Allauth uses the correct domain for the callback
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+
+# Important for subdirectory hosting
+FORCE_SCRIPT_NAME = '/KyaMainZindaHoon'
