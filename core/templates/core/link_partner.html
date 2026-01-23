@@ -1,28 +1,26 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-screen">
-    {% if user.is_authenticated %}
-    <form method="post" action="{% url 'account_logout' %}" class="self-end mb-4 animate-fade-in">
-        {% csrf_token %}
-        <button type="submit" class="bg-black/60 hover:bg-black/80 text-white font-bold py-2 px-6 rounded-lg shadow-lg backdrop-blur transition-all duration-300">Logout</button>
-    </form>
-    {% endif %}
-    <div class="w-full max-w-xl bg-black/60 rounded-3xl shadow-2xl p-8 flex flex-col items-center animate-fade-in backdrop-blur-lg border border-white/10">
+{% include 'core/app_icon.html' %}
+{% if messages %}
+    <div class="w-full flex flex-col items-center mt-4">
+        {% for message in messages %}
+            <div class="px-6 py-3 rounded-xl shadow-lg mb-2 text-center font-semibold animate-fade-in
+                {% if message.tags == 'error' %}bg-red-500/80 text-white{% elif message.tags == 'success' %}bg-green-500/80 text-white{% else %}bg-gray-700/80 text-white{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="flex flex-col items-center" style="min-height: 60vh;">
+    <div class="w-full max-w-xl bg-black/60 rounded-3xl shadow-2xl p-4 flex flex-col items-center animate-fade-in backdrop-blur-lg border border-white/10 mt-10">
         <h1 class="text-4xl md:text-5xl font-extrabold text-center mb-8 text-white drop-shadow-lg">Link a Partner</h1>
-        <p class="text-center mb-8 text-white/80">Enter your partner's email to link.</p>
+        <p class="text-center mb-8 text-white/80">Enter your partner's invite code to link.</p>
         <form method="post" class="w-full animate-fade-in">
             {% csrf_token %}
-            <input type="email" name="email" placeholder="Partner's Email" required class="w-full p-3 mb-6 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-green-400/60 transition-all duration-300">
-            <button type="submit" class="w-full bg-green-600/90 hover:bg-green-700/90 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400/40">Link Partner</button>
+            <input type="text" name="invite_code" maxlength="5" placeholder="Partner's Invite Code" required class="w-full p-3 mb-6 bg-black/40 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-300 shadow-lg backdrop-blur-lg">
+            <button type="submit" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/30">Link Partner</button>
         </form>
-        {% if messages %}
-        <ul class="mt-4 text-center w-full">
-            {% for message in messages %}
-            <li class="{% if message.tags == 'error' %}text-red-400{% else %}text-green-400{% endif %} text-lg animate-fade-in">{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
     </div>
 </div>
 <style>

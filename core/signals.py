@@ -6,7 +6,8 @@ from .models import Profile
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        from .models import generate_invite_code
+        Profile.objects.create(user=instance, invite_code=generate_invite_code())
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

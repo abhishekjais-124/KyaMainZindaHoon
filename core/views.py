@@ -14,12 +14,21 @@ from django.db.models import Q
 @login_required
 def invite_code_popup(request):
     profile = request.user.profile
+    if not profile.invite_code:
+        from .models import generate_invite_code
+        profile.invite_code = generate_invite_code()
+        profile.save()
     return render(request, 'core/invite_code_popup.html', {'invite_code': profile.invite_code})
 
 @login_required
 @require_GET
 def get_invite_code(request):
-    return JsonResponse({'invite_code': request.user.profile.invite_code})
+    profile = request.user.profile
+    if not profile.invite_code:
+        from .models import generate_invite_code
+        profile.invite_code = generate_invite_code()
+        profile.save()
+    return JsonResponse({'invite_code': profile.invite_code})
 
 # Friends page view
 @login_required
@@ -148,14 +157,13 @@ def dashboard(request):
 @login_required
 def link_partner(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
+        invite_code = request.POST.get('invite_code', '').strip().lower()
         try:
-            partner_user = User.objects.get(email=email)
-            if partner_user == request.user:
+            partner_profile = Profile.objects.get(invite_code=invite_code)
+            if partner_profile.user == request.user:
                 messages.error(request, "You can't link yourself as partner.")
             else:
                 profile = request.user.profile
-                partner_profile = partner_user.profile
                 if profile.get_partner() or partner_profile.get_partner():
                     messages.error(request, "One of you already has a partner.")
                 else:
@@ -163,8 +171,8 @@ def link_partner(request):
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
                     messages.success(request, "Partner linked successfully!")
                     return redirect('dashboard')
-        except User.DoesNotExist:
-            messages.error(request, "User with this email does not exist.")
+        except Profile.DoesNotExist:
+            messages.error(request, "User with this invite code does not exist.")
     return render(request, 'core/link_partner.html')
 
 @login_required
