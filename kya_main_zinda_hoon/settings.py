@@ -56,9 +56,9 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGIN_URL = '/accounts/login/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/KyaMainZindaHoon/dashboard/'
+LOGIN_URL = '/KyaMainZindaHoon/accounts/login/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/KyaMainZindaHoon/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

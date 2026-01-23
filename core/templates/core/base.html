@@ -26,7 +26,7 @@
 <!-- Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center py-3 px-2 rounded-t-[2.5rem] mx-2 mb-2 shadow-2xl animate-fade-in"
     style="background: rgba(20,20,20,0.22); backdrop-filter: blur(22px); border-top: 2px solid rgba(255,255,255,0.10); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);">
-    <a href="/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-home">
+    <a href="/KyaMainZindaHoon/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-home">
         <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
             <!-- Home Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
@@ -43,7 +43,7 @@
             </svg>
         </span>
     </button>
-    <a href="/friends/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-friends">
+    <a href="/KyaMainZindaHoon/friends/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-friends">
         <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
             <!-- Users Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
@@ -52,7 +52,7 @@
         </span>
         <!-- text removed -->
     </a>
-    <a href="/profile/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-profile">
+    <a href="/KyaMainZindaHoon/profile/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-profile">
         <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
             <!-- User Circle Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
@@ -69,7 +69,7 @@
 {% endif %}
 <script>
 function showInviteCodePopup() {
-    fetch('/get_invite_code/')
+    fetch('/KyaMainZindaHoon/get_invite_code/')
         .then(r => r.json())
         .then(data => {
             document.getElementById('invite-code-value').innerText = data.invite_code;

@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkInBtn.disabled = true;
         checkInBtn.classList.add('opacity-75', 'cursor-not-allowed');
         
-        fetch('{% url "check_in" %}', {
+        fetch('/KyaMainZindaHoon/check-in/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
