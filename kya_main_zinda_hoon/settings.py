@@ -56,8 +56,8 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/KyaMainZindaHoon/dashboard/'
+LOGIN_URL = '/KyaMainZindaHoon/accounts/login/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
@@ -156,7 +156,7 @@ TAILWIND_APP_NAME = 'dark'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-ALLOWED_HOSTS = ["aj124.com", "www.aj124.com", "localhost", "127.0.0.1", ".onrender.com", "KyaMainZindaHoon.onrender.com"]
+ALLOWED_HOSTS = ["aj124.com", "www.aj124.com", "localhost", "127.0.0.1", ".onrender.com", "kmzh.onrender.com"]
 
 # django-allauth: skip provider confirmation and auto-continue
 SOCIALACCOUNT_AUTO_SIGNUP = True
