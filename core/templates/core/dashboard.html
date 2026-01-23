@@ -4,9 +4,19 @@
 {% endblock %}
 {% load static %}
 
+<style>
+    /* Disable text selection only in dashboard content */
+    .dashboard-no-select, .dashboard-no-select * {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        -webkit-touch-callout: none !important;
+    }
+</style>
 {% block content %}
 {% include 'core/app_icon.html' %}
-<div class="w-full min-h-screen flex flex-col items-center justify-start px-12 pt-12 pb-4 gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+<div class="dashboard-no-select w-full min-h-screen flex flex-col items-center justify-start px-12 pt-12 pb-4 gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
         <!-- Glassy Title Above Loader -->
         <div class="flex flex-col items-center gap-6 w-full mt-2">
             <div class="mb-1 w-full flex justify-center">
