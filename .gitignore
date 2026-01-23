@@ -1,3 +1,6 @@
+# Deployment and environment
+.env
+Procfile
 # Python
 __pycache__/
 *.py[cod]

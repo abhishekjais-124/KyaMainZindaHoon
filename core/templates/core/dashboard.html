@@ -74,7 +74,7 @@
         <div class="w-full max-w-lg mx-auto mt-4 mb-4">
             {% if profile.is_missing %}
                 {% with status="Danger" color="red" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
                         <div>
                             <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
@@ -84,7 +84,7 @@
                 {% endwith %}
             {% elif profile.is_warning %}
                 {% with status="Warning" color="yellow" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg"></span>
                         <div>
                             <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
@@ -94,7 +94,7 @@
                 {% endwith %}
             {% else %}
                 {% with status="Active" color="green" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl px-8 py-6 flex items-center gap-5 animate-fade-in">
+                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg"></span>
                         <div>
                             <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>

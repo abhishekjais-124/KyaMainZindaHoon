@@ -30,9 +30,24 @@ Set the following in your environment:
 - `GOOGLE_CLIENT_ID` (for allauth)
 - `GOOGLE_CLIENT_SECRET`
 
+
 ## Deployment
 
-Configured for subdirectory hosting at `/zinda` with `FORCE_SCRIPT_NAME = '/zinda/'`
+1. Ensure you have a `.env` file with your environment variables (see above).
+2. Static files are served using WhiteNoise (no need for a separate static server).
+3. For production, use Gunicorn:
+   
+	```sh
+	gunicorn kya_main_zinda_hoon.wsgi:application
+	```
+
+4. A `Procfile` is included for platforms like Heroku/Render:
+   
+	```
+	web: gunicorn kya_main_zinda_hoon.wsgi:application
+	```
+
+5. App is configured for subdirectory hosting at `/zinda` with `FORCE_SCRIPT_NAME = '/zinda/'`.
 
 ## Management Command
 
