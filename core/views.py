@@ -55,8 +55,7 @@ def friends_view(request):
                     error_msg = "You can't pair with yourself."
                 elif profile.get_partner():
                     error_msg = "You already have a partner."
-                elif partner_profile.get_partner():
-                    error_msg = "This user already has a partner."
+                # Removed check: allow pairing with anyone, even if already paired
                 else:
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
@@ -111,7 +110,14 @@ def profile_view(request):
             request.user.first_name = parts[0]
             request.user.last_name = parts[1] if len(parts) > 1 else ''
             request.user.save()
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Name updated successfully!'})
             messages.success(request, 'Name updated successfully!')
+            return redirect('profile')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Name cannot be empty.'})
+            messages.error(request, 'Name cannot be empty.')
             return redirect('profile')
 
     # Handle invite code join
@@ -124,8 +130,7 @@ def profile_view(request):
                     error_msg = "You can't pair with yourself."
                 elif profile.get_partner():
                     error_msg = "You already have a partner."
-                elif partner_profile.get_partner():
-                    error_msg = "This user already has a partner."
+                # Removed check: allow pairing with anyone, even if already paired
                 else:
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)

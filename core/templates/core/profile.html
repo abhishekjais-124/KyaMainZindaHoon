@@ -22,9 +22,15 @@ body, html {
     <!-- User Info -->
     <div class="w-full flex flex-col items-center mb-6">
       <div class="w-full bg-black/60 rounded-xl py-3 mb-2 flex flex-col items-center">
-        <span class="text-2xl font-bold text-white">{{ user.get_full_name|default:user.username }}</span>
+        <span id="editable-full-name" class="text-2xl font-bold text-white cursor-pointer hover:bg-white/10 transition-all duration-200">{{ user.get_full_name|default:user.username }}</span>
       </div>
-      <span class="text-gray-300 text-base">{{ request.user.username }}</span>
+      <span class="text-gray-400 text-xs">{{ request.user.email }}</span>
+    <form method="post" style="display:none;">
+      {% csrf_token %}
+    </form>
+    {% block extra_js %}
+    <script src="{% static 'js/profile_inline_edit.js' %}"></script>
+    {% endblock %}
     </div>
     <!-- Logout Button -->
     <form method="post" action="{% url 'account_logout' %}" class="w-full mt-4">
