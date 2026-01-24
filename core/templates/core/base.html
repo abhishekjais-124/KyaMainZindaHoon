@@ -19,10 +19,24 @@
 {% block dashboard_noscroll %}{% endblock %}
 </head>
 <body class="bg-gradient-to-br from-black via-gray-900 to-gray-800 min-h-screen text-white" id="body-root">
-    <div class="container mx-auto px-2 py-8 flex flex-col items-center justify-center min-h-screen">
-        {% block content %}{% endblock %}
-    </div>
+        {% include 'core/partials/loader.html' %}
+        <div class="container mx-auto px-2 py-8 flex flex-col items-center justify-center min-h-screen">
+                {% block content %}{% endblock %}
+        </div>
 </div>
+<script>
+    // Utility to show/hide loader
+    function showLoader() {
+        document.getElementById('funny-loading').style.display = 'flex';
+    }
+    function hideLoader() {
+        document.getElementById('funny-loading').style.display = 'none';
+    }
+    // Hide loader by default on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        hideLoader();
+    });
+</script>
 <!-- Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center py-3 pb-6 px-2 rounded-t-[2.5rem] mx-2 mb-2 shadow-2xl animate-fade-in"
     style="background: rgba(20,20,20,0.22); backdrop-filter: blur(22px); border-top: 2px solid rgba(255,255,255,0.10); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);">

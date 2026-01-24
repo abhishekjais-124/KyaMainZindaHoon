@@ -1,0 +1,18 @@
+{% load static %}
+<div id="funny-loading" class="flex items-center justify-center min-h-screen bg-black" style="display: none;">
+  <svg class="animate-spin-smooth" width="120" height="120" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="50" stroke="#444" stroke-width="10" fill="none" opacity="0.25" />
+    <path d="M60 10
+      a 50 50 0 1 1 -35.36 85.36" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" />
+  </svg>
+</div>
+<style>
+@keyframes spin-smooth {
+  100% { transform: rotate(360deg); }
+}
+.animate-spin-smooth {
+  animation: spin-smooth 1s linear infinite;
+  display: block;
+  margin: auto;
+}
+</style>

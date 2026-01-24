@@ -1,4 +1,11 @@
+# Alert popups
+from django.http import HttpResponse
 
+def alert_danger(request):
+    return render(request, 'core/message_popup.html', {'message_title': 'Danger!', 'message_text': 'This is a danger alert.', 'message_type': 'danger'})
+
+def alert_warning(request):
+    return render(request, 'core/message_popup.html', {'message_title': 'Warning!', 'message_text': 'This is a warning alert.', 'message_type': 'warning'})
 from django.views.decorators.http import require_GET, require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -19,6 +26,9 @@ def invite_code_popup(request):
         profile.invite_code = generate_invite_code()
         profile.save()
     return render(request, 'core/invite_code_popup.html', {'invite_code': profile.invite_code})
+
+def loading_screen(request):
+    return render(request, 'core/loading_screen.html')
 
 @login_required
 @require_GET

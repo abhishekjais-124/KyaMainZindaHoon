@@ -18,8 +18,13 @@
         <span id="word-hoon" class="opacity-0 transition-opacity duration-500"> Hoon?</span>
     </h1>
     <a href="{% provider_login_url 'google' %}" class="neumorphic-button opacity-0 transition-opacity duration-0" id="google-login-btn">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="w-14 h-14 mx-auto mb-2">
-    </a>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="w-14 h-14 mx-auto mb-2">
+        </a>
+        <script>
+            document.getElementById('google-login-btn').addEventListener('click', function(e) {
+                showLoader();
+            });
+        </script>
 </div>
 
 <style>

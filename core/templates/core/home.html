@@ -18,17 +18,17 @@
         min-width: 100vw;
         margin: 0;
         padding: 0;
-        overflow-x: hidden;
+        overflow: hidden !important;
         background: linear-gradient(135deg, #000 0%, #fff 100%);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
+<div class="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden" style="margin-top: -4vh;">
     <!-- Layered gradients for premium effect -->
     <div class="absolute inset-0 z-0 pointer-events-none" style="background: radial-gradient(circle at 60% 20%, rgba(255,255,255,0.18) 0%, transparent 60%), radial-gradient(circle at 20% 80%, rgba(0,0,0,0.22) 0%, transparent 70%);"></div>
-        <div class="glass-card flex flex-col items-center justify-center px-8 py-12 rounded-[2.5rem] shadow-2xl z-10" style="backdrop-filter: blur(22px); background: rgba(255,255,255,0.10); border: 2px solid rgba(0,0,0,0.10); box-shadow: 0 12px 48px 0 rgba(0,0,0,0.18); margin-top: -12vh;">
+        <div class="glass-card flex flex-col items-center justify-center px-8 py-10 rounded-[2.5rem] shadow-2xl z-10" style="backdrop-filter: blur(22px); background: rgba(255,255,255,0.10); border: 2px solid rgba(0,0,0,0.10); box-shadow: 0 12px 48px 0 rgba(0,0,0,0.18); margin-top: 0;">
                 <!-- Loader Button removed for home.html -->
         <!-- Main Title -->
         <h2 class="text-5xl md:text-7xl lg:text-8xl font-extrabold mb-3 text-white animate-premium-title" style="font-family: 'Montserrat', 'Playfair Display', serif; letter-spacing: -0.03em; margin-top: -3vh; text-shadow: 0 4px 32px rgba(80,80,255,0.22), 0 1px 8px #fff2;">
@@ -38,10 +38,25 @@
             KYA MAIN ZINDA HOON
         </div>
         <!-- Google Login Button -->
-            <a href="{% provider_login_url 'google' %}" class="group relative inline-block cursor-pointer">
-                <div class="relative w-36 h-36 md:w-44 md:h-44 rounded-full bg-gradient-to-br from-white/30 via-black/30 to-white/10 backdrop-blur-xl border-2 border-black/20 shadow-2xl">
+            <a href="{% provider_login_url 'google' %}" class="group relative inline-block cursor-pointer google-login-btn">
+                <div class="relative w-36 h-36 md:w-44 md:h-44 rounded-full bg-gradient-to-br from-white/30 via-black/30 to-white/10 backdrop-blur-xl border-2 border-black/20 shadow-2xl transition-all duration-200 group-hover:scale-105 group-hover:brightness-110">
                 <div class="absolute inset-0 flex items-center justify-center">
                     <svg class="w-20 h-20 md:w-24 md:h-24 transition-all duration-500 group-hover:scale-110 grayscale" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        </style>
+                        <style>
+                            .google-login-btn {
+                                transition: filter 0.18s, transform 0.18s;
+                            }
+                            .google-login-btn:hover .bg-gradient-to-br {
+                                filter: brightness(1.15) drop-shadow(0 0 12px #fff8);
+                                transform: scale(1.07);
+                                box-shadow: 0 0 0 4px #fff4, 0 12px 48px 0 rgba(0,0,0,0.18);
+                            }
+                            .google-login-btn:active .bg-gradient-to-br {
+                                filter: brightness(0.95);
+                                transform: scale(0.98);
+                            }
+                        </style>
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/>
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#bbb"/>
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#eee"/>
