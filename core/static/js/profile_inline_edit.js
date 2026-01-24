@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let originalName = nameSpan.innerText;
 
-  nameSpan.addEventListener('click', function() {
+  function activateEdit() {
     if (nameSpan.querySelector('input')) return;
     const input = document.createElement('input');
     input.type = 'text';
@@ -59,5 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
         nameSpan.innerText = originalName;
       }
     });
+  }
+
+  nameSpan.addEventListener('click', activateEdit);
+  nameSpan.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    activateEdit();
   });
 });
