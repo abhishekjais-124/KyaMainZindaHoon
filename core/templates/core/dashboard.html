@@ -13,36 +13,56 @@
         -ms-user-select: none !important;
         -webkit-touch-callout: none !important;
     }
+    /* Center content in visible area (above bottom nav); reserve space for nav */
+    .dashboard-main {
+        min-height: calc(100vh - 6rem);
+        min-height: calc(100dvh - 6rem);
+    }
+    @media (max-width: 430px) {
+        .dashboard-main {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 0;
+            padding-bottom: 0;
+            min-height: calc(100vh - 6rem - env(safe-area-inset-bottom, 0px));
+            min-height: calc(100dvh - 6rem - env(safe-area-inset-bottom, 0px));
+            gap: 0.75rem;
+        }
+        .dashboard-title { font-size: 1.5rem; padding: 0.5rem 1rem; }
+        .dashboard-loader-btn { width: min(72vw, 17rem); height: min(72vw, 17rem); min-width: 12rem; min-height: 12rem; }
+        .dashboard-loader-number { font-size: 5rem; }
+        .dashboard-status-card { padding: 0.75rem 1rem; gap: 0.75rem; }
+    }
 </style>
 {% block content %}
 {% include 'core/app_icon.html' %}
-<div class="dashboard-no-select w-full min-h-screen flex flex-col items-center justify-start px-12 pt-12 pb-4 gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+<div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-12 py-6 sm:py-8 gap-4 sm:gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
     <!-- Glassy Title Above Loader -->
-    <div class="flex flex-col items-center gap-6 w-full mt-2">
-        <div class="mb-1 w-full flex justify-center">
-            <span class="block text-3xl md:text-5xl font-extrabold tracking-tight text-white/90 px-8 py-4 rounded-3xl shadow-2xl border border-white/10 bg-black/40 backdrop-blur-2xl"
+    <div class="flex flex-col items-center gap-4 sm:gap-6 w-full mt-0 sm:mt-2 -translate-y-8 pt-20 sm:pt-24">
+        <div class="mb-0 sm:mb-1 w-full flex justify-center px-1">
+            <span class="dashboard-title block text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-white/90 px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/40 backdrop-blur-2xl"
                 style="background: rgba(20,20,20,0.18); font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif; letter-spacing: 0.01em;">
                 Am I Alive?
             </span>
         </div>
         <div class="relative flex items-center justify-center w-full mt-0">
-            <button id="loader-btn" class="relative w-72 h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden"
+            <button id="loader-btn" class="dashboard-loader-btn relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden"
                 style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
                 <!-- Animated SVG Ring -->
                 <svg class="absolute inset-0 w-full h-full" width="288" height="288" viewBox="0 0 288 288">
                     <circle cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" opacity="0.10" />
                     <circle id="loader-ring" cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="791.6813" stroke-dashoffset="791.6813" style="transition: stroke-dashoffset 0.18s cubic-bezier(.4,0,.2,1);" />
                 </svg>
-                <span id="loader-number" class="text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10">100</span>
+                <span id="loader-number" class="dashboard-loader-number text-8xl sm:text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10">100</span>
                 <span id="loader-tick" style="display:none;"
                     class="absolute inset-0 flex items-center justify-center z-20">
-                    <span class="relative flex items-center justify-center w-36 h-36 md:w-40 md:h-40 rounded-full shadow-2xl border border-green-300/30 bg-gradient-to-br from-green-400/30 via-green-300/20 to-white/10 backdrop-blur-2xl animate-tick-pop">
+                    <span class="relative flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full shadow-2xl border border-green-300/30 bg-gradient-to-br from-green-400/30 via-green-300/20 to-white/10 backdrop-blur-2xl animate-tick-pop">
                         <!-- Glowing animated ring -->
                         <span class="absolute inset-0 rounded-full pointer-events-none animate-tick-glow" style="box-shadow: 0 0 32px 8px #22ff78cc, 0 0 0 8px #22ff7833;"></span>
                         <!-- Glass inner layer -->
                         <span class="absolute inset-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10"></span>
                         <!-- Stylish SVG Tick -->
-                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10">
+                        <svg class="w-16 h-16 sm:w-20 sm:h-20 md:w-[80px] md:h-[80px]" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10">
                             <circle cx="40" cy="40" r="36" stroke="#22ff78" stroke-width="5" fill="rgba(34,255,120,0.10)" filter="url(#tick-glow)" />
                             <path d="M24 44L37 57L58 28" stroke="#22ff78" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#tick-glow)"/>
                             <defs>
@@ -75,37 +95,37 @@
                 }
                 </style>
             </button>
-            <audio id="loader-sound" src="{% static 'sounds/checkin_sound.mp3' %}"></audio>
+            <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
         </div>
         {% if profile and profile.last_check_in %}
-        <div class="w-full max-w-lg mx-auto mt-4 mb-4">
+        <div class="w-full max-w-lg mx-auto mt-1 sm:mt-2 mb-4 flex justify-center">
             {% if profile.is_missing %}
                 {% with status="Danger" color="red" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
+                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
                         <div>
-                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                         </div>
                     </div>
                 {% endwith %}
             {% elif profile.is_warning %}
                 {% with status="Warning" color="yellow" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
+                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg"></span>
                         <div>
-                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                         </div>
                     </div>
                 {% endwith %}
             {% else %}
                 {% with status="Active" color="green" %}
-                    <div class="rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-6 flex items-center gap-5 animate-fade-in" style="padding-left: 0.4rem; padding-right: 0.4rem;">
+                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg"></span>
                         <div>
-                            <div class="text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                         </div>
                     </div>
                 {% endwith %}
@@ -233,8 +253,8 @@
         <!-- Status Popup (Warning/Danger) -->
         {% if profile and profile.last_check_in %}
             {% if profile.is_missing or profile.is_warning %}
-                <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop" style="display:none;">
-                    <div class="relative bg-black/80 border border-white/10 rounded-3xl shadow-2xl px-8 py-8 flex flex-col items-center gap-4" style="min-width: 260px; max-width: 90vw;">
+                <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;">
+                    <div class="relative bg-black/80 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl px-5 py-6 sm:px-8 sm:py-8 flex flex-col items-center gap-3 sm:gap-4" style="min-width: 260px; max-width: min(90vw, 22rem);">
                         <button onclick="closeStatusPopup()" class="absolute top-3 right-3 text-white/60 hover:text-white/90 text-2xl focus:outline-none">&times;</button>
                         <div class="text-lg font-semibold text-white/80 mb-2 tracking-wide">
                             {% if profile.is_missing %}
@@ -327,7 +347,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const checkInBtn = document.getElementById('check-in-btn');
-    
+    if (!checkInBtn) return;
+
     checkInBtn.addEventListener('click', function() {
         // Disable button during request
         checkInBtn.disabled = true;

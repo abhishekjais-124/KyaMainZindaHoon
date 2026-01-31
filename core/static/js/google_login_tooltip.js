@@ -8,12 +8,10 @@ window.addEventListener('DOMContentLoaded', function() {
   tooltip.innerText = 'Click here to login';
   tooltip.className = 'google-tooltip-glass';
   tooltip.style.position = 'absolute';
-  // Place tooltip centered on the button
+  // Place tooltip centered on the button, slightly above center
   tooltip.style.top = '50%';
   tooltip.style.left = '50%';
-  tooltip.style.transform = 'translate(-50%, -50%)';
-  tooltip.style.left = '50%';
-  tooltip.style.transform = 'translateX(-50%)';
+  tooltip.style.transform = 'translate(-50%, calc(-50% - 6px))';
   tooltip.style.zIndex = '50';
   tooltip.style.opacity = '0';
   tooltip.style.pointerEvents = 'none';

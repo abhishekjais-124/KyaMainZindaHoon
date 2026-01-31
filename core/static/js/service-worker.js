@@ -1,8 +1,7 @@
 const CACHE_NAME = 'kmzh-cache-v1';
 const urlsToCache = [
-  '/',
-  '/static/css/styles.css',
-  // Add more assets as needed
+  '/'
+  // Add more assets as needed (use paths that exist to avoid install failure)
 ];
 
 self.addEventListener('install', event => {

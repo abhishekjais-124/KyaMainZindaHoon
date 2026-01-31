@@ -3,6 +3,7 @@
 Procfile
 # Python
 __pycache__/
+*.pyc
 *.py[cod]
 *.so
 *.egg
