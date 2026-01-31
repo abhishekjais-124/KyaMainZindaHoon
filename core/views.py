@@ -52,14 +52,13 @@ def friends_view(request):
             try:
                 partner_profile = Profile.objects.get(invite_code=invite_code)
                 if partner_profile == profile:
-                    error_msg = "You can't pair with yourself."
-                elif profile.get_partner():
-                    error_msg = "You already have a partner."
-                # Removed check: allow pairing with anyone, even if already paired
+                    error_msg = "You can't add yourself as a friend."
+                elif profile.is_partner_with(partner_profile):
+                    error_msg = "You're already friends with this person."
                 else:
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    success_msg = "Paired successfully!"
+                    success_msg = "Friend added!"
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                         return JsonResponse({'success': True, 'message': success_msg})
                     messages.success(request, success_msg)
@@ -127,14 +126,13 @@ def profile_view(request):
             try:
                 partner_profile = Profile.objects.get(invite_code=invite_code)
                 if partner_profile == profile:
-                    error_msg = "You can't pair with yourself."
-                elif profile.get_partner():
-                    error_msg = "You already have a partner."
-                # Removed check: allow pairing with anyone, even if already paired
+                    error_msg = "You can't add yourself as a friend."
+                elif profile.is_partner_with(partner_profile):
+                    error_msg = "You're already friends with this person."
                 else:
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    success_msg = "Paired successfully!"
+                    success_msg = "Friend added!"
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                         return JsonResponse({'success': True, 'message': success_msg})
                     messages.success(request, success_msg)
@@ -148,13 +146,40 @@ def profile_view(request):
                     return JsonResponse({'success': False, 'message': error_msg})
                 messages.error(request, error_msg)
 
-    # Paired users list (show only if paired)
-    paired_users = []
-    partner = profile.get_partner()
-    if partner:
-        paired_users.append(partner.user)
+    paired_users = [p.user for p in profile.get_partners()]
 
     return render(request, 'core/profile.html', {'paired_users': paired_users})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def settings_view(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            import json
+            try:
+                data = json.loads(request.body)
+                if 'share_location_with_friends' in data:
+                    profile.share_location_with_friends = bool(data['share_location_with_friends'])
+                if 'snooze_enabled' in data:
+                    profile.snooze_enabled = bool(data['snooze_enabled'])
+                profile.save()
+                return JsonResponse({
+                    'success': True,
+                    'share_location_with_friends': profile.share_location_with_friends,
+                    'snooze_enabled': profile.snooze_enabled,
+                })
+            except Exception:
+                return JsonResponse({'success': False}, status=400)
+        if 'share_location_with_friends' in request.POST:
+            profile.share_location_with_friends = request.POST.get('share_location_with_friends') == 'on'
+        if 'snooze_enabled' in request.POST:
+            profile.snooze_enabled = request.POST.get('snooze_enabled') == 'on'
+        profile.save()
+        return redirect('settings')
+    return render(request, 'core/settings.html', {'profile': profile})
+
 
 def home(request):
     if not request.user.is_authenticated:
@@ -165,7 +190,7 @@ def home(request):
 @login_required
 def dashboard(request):
     profile = request.user.profile
-    if not profile.get_partner():
+    if not profile.get_partners():
         return redirect('link_partner')
     return render(request, 'core/dashboard.html', {'profile': profile})
 
@@ -176,15 +201,15 @@ def link_partner(request):
         try:
             partner_profile = Profile.objects.get(invite_code=invite_code)
             if partner_profile.user == request.user:
-                messages.error(request, "You can't link yourself as partner.")
+                messages.error(request, "You can't add yourself as a friend.")
             else:
                 profile = request.user.profile
-                if profile.get_partner() or partner_profile.get_partner():
-                    messages.error(request, "One of you already has a partner.")
+                if profile.is_partner_with(partner_profile):
+                    messages.error(request, "You're already friends with this person.")
                 else:
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    messages.success(request, "Partner linked successfully!")
+                    messages.success(request, "Friend added!")
                     return redirect('dashboard')
         except Profile.DoesNotExist:
             messages.error(request, "User with this invite code does not exist.")
@@ -196,6 +221,31 @@ def check_in(request):
         profile = request.user.profile
         profile.last_check_in = timezone.now()
         profile.alert_sent = False  # reset if was sent
+        # Store location when sharing is enabled (from JSON or form)
+        if profile.share_location_with_friends:
+            lat, lng = None, None
+            if request.headers.get('content-type', '').startswith('application/json'):
+                try:
+                    import json
+                    data = json.loads(request.body)
+                    lat = data.get('lat')
+                    lng = data.get('lng')
+                except Exception:
+                    pass
+            else:
+                lat = request.POST.get('lat')
+                lng = request.POST.get('lng')
+            if lat is not None and lng is not None:
+                try:
+                    profile.last_latitude = float(lat)
+                    profile.last_longitude = float(lng)
+                    profile.location_updated_at = timezone.now()
+                    from .utils import reverse_geocode
+                    city, state = reverse_geocode(profile.last_latitude, profile.last_longitude)
+                    profile.last_city = city
+                    profile.last_state = state
+                except (TypeError, ValueError):
+                    pass
         profile.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)

@@ -39,13 +39,14 @@
 <div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-12 py-6 sm:py-8 gap-4 sm:gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
     <!-- Glassy Title Above Loader -->
     <div class="flex flex-col items-center gap-4 sm:gap-6 w-full mt-0 sm:mt-2 -translate-y-8 pt-20 sm:pt-24">
-        <div class="mb-0 sm:mb-1 w-full flex justify-center px-1">
+        <div class="mb-0 sm:mb-1 w-full flex flex-col items-center gap-2 px-1">
             <span class="dashboard-title block text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-white/90 px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/40 backdrop-blur-2xl"
                 style="background: rgba(20,20,20,0.18); font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif; letter-spacing: 0.01em;">
-                Am I Alive?
+                Am I Ok?
             </span>
+            <p class="text-sm sm:text-base text-white/50 font-medium tracking-wide text-center max-w-xs">Let friends know you're okay</p>
         </div>
-        <div class="relative flex items-center justify-center w-full mt-0">
+        <div class="relative flex flex-col items-center justify-center w-full mt-0 gap-2">
             <button id="loader-btn" class="dashboard-loader-btn relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden"
                 style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
                 <!-- Animated SVG Ring -->
@@ -96,10 +97,21 @@
                 </style>
             </button>
             <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
+            <p class="text-xs sm:text-sm text-white/40 mt-1 text-center">Press and hold to mark attendance</p>
         </div>
         {% if profile and profile.last_check_in %}
         <div class="w-full max-w-lg mx-auto mt-1 sm:mt-2 mb-4 flex justify-center">
-            {% if profile.is_missing %}
+            {% if profile.snooze_enabled %}
+                {% with status="Paused" %}
+                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
+                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-gray-500 shadow-lg"></span>
+                        <div>
+                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-gray-400">{{ status }}</span></div>
+                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        </div>
+                    </div>
+                {% endwith %}
+            {% elif profile.is_missing %}
                 {% with status="Danger" color="red" %}
                     <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
                         <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
@@ -132,6 +144,15 @@
             {% endif %}
         </div>
         {% endif %}
+        <!-- Quick tip / reminder -->
+        <div class="w-full max-w-md mx-auto mt-2 sm:mt-4 px-4">
+            <div class="rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl py-3 px-4 flex items-center gap-3">
+                <span class="flex-shrink-0 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                <p class="text-xs sm:text-sm text-white/50 leading-snug">Check in regularly to stay Active.</p>
+            </div>
+        </div>
 </div>
         <script>
         const loaderBtn = document.getElementById('loader-btn');
@@ -153,35 +174,54 @@
                     loaderNumber.style.display = '';
                     setNumber(0);
                 }, 5000);
-                // Update last check-in time
-                fetch('{% url "check_in" %}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                // Update last check-in time (with optional location if sharing enabled)
+                var shareLocation = {{ profile.share_location_with_friends|yesno:"true,false" }};
+                function doCheckIn(lat, lng) {
+                    var opts = { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content } };
+                    if (lat != null && lng != null) {
+                        opts.headers['Content-Type'] = 'application/json';
+                        opts.body = JSON.stringify({ lat: lat, lng: lng });
                     }
-                }).then(() => {
+                    fetch('{% url "check_in" %}', opts)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                    if (data.status !== 'success') {
+                        if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
+                        return;
+                    }
                     // Update status card without reload
-                    // Update dot to green
                     const dot = document.getElementById('status-dot');
                     if (dot) {
                         dot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
                     }
-                    // Update status text to Active
                     const statusSpan = document.getElementById('status-text');
-                    if (statusSpan) {
-                        statusSpan.textContent = 'Active';
-                    }
-                    // Update check-in text to Just now
+                    if (statusSpan) statusSpan.textContent = 'Active';
                     const checkInDiv = document.getElementById('check-in-time');
-                    if (checkInDiv) {
-                        checkInDiv.textContent = 'Check-in: Just now';
-                    }
-                    // Play sound
+                    if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
+                    // Confirm 100% attendance marked
+                    if (typeof showMessagePopup === 'function') showMessagePopup(true, 'Attendance marked · 100%');
+                    // Play sound, then vibrate after sound ends
                     loaderSound.currentTime = 0;
+                    const vibrateAfterSound = function() {
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        loaderSound.removeEventListener('ended', vibrateAfterSound);
+                    };
+                    loaderSound.addEventListener('ended', vibrateAfterSound);
                     loaderSound.play();
-                    // Vibrate
-                    if (navigator.vibrate) navigator.vibrate(200);
+                })
+                .catch(function() {
+                    if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
                 });
+                }
+                if (shareLocation && navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos) { doCheckIn(pos.coords.latitude, pos.coords.longitude); },
+                        function() { doCheckIn(null, null); },
+                        { timeout: 10000, maximumAge: 60000 }
+                    );
+                } else {
+                    doCheckIn(null, null);
+                }
                 return;
             } else {
                 if (tick) tick.style.display = 'none';
@@ -232,7 +272,6 @@
             animateTo(0, 0, () => {
                 animateTo(100, 1000, () => {
                     completed = true;
-                    if (navigator.vibrate) navigator.vibrate(200);
                 });
             });
         }
@@ -250,8 +289,9 @@
         setNumber(0);
         </script>
 
-        <!-- Status Popup (Warning/Danger) -->
+        <!-- Status Popup (Warning/Danger) - only when not snoozed -->
         {% if profile and profile.last_check_in %}
+            {% if not profile.snooze_enabled %}
             {% if profile.is_missing or profile.is_warning %}
                 <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;">
                     <div class="relative bg-black/80 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl px-5 py-6 sm:px-8 sm:py-8 flex flex-col items-center gap-3 sm:gap-4" style="min-width: 260px; max-width: min(90vw, 22rem);">
@@ -265,7 +305,7 @@
                         </div>
                         <div class="text-center text-white/70 text-base leading-relaxed">
                             {% if profile.is_missing %}
-                                You have not checked in for over <b>48 hours</b>.<br>Immediate check-in is required to avoid alerting your partner!
+                                You have not checked in for over <b>48 hours</b>.<br>Immediate check-in is required to avoid alerting your friends!
                             {% else %}
                                 You have not checked in for over <b>32 hours</b>.<br>Please check in soon to avoid entering danger status.
                             {% endif %}
@@ -285,6 +325,7 @@
                     }
                 });
                 </script>
+            {% endif %}
             {% endif %}
         {% endif %}
 

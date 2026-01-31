@@ -13,7 +13,13 @@
   </div>
 </div>
 <script>
+var messagePopupDismissTimer = null;
+
 function showMessagePopup(success, message) {
+  if (messagePopupDismissTimer) {
+    clearTimeout(messagePopupDismissTimer);
+    messagePopupDismissTimer = null;
+  }
   const popup = document.getElementById('message-popup');
   const icon = document.getElementById('message-icon');
   const title = document.getElementById('message-title');
@@ -39,9 +45,18 @@ function showMessagePopup(success, message) {
 
   text.textContent = message;
   popup.style.display = 'flex';
+
+  messagePopupDismissTimer = setTimeout(function() {
+    closeMessagePopup();
+    messagePopupDismissTimer = null;
+  }, 3000);
 }
 
 function closeMessagePopup() {
+  if (messagePopupDismissTimer) {
+    clearTimeout(messagePopupDismissTimer);
+    messagePopupDismissTimer = null;
+  }
   document.getElementById('message-popup').style.display = 'none';
 }
 </script>

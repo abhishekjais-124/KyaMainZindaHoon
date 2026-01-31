@@ -1,4 +1,4 @@
-# Kya Main Zinda Hoon?
+# Am I Alive
 
 A Django web app for a "Dead Man's Switch" where pairs of users check in to ensure each other's safety.
 

@@ -19,19 +19,35 @@ class Profile(models.Model):
     last_check_in = models.DateTimeField(default=timezone.now)
     alert_sent = models.BooleanField(default=False)
     invite_code = models.CharField(max_length=5, unique=True, null=False, blank=False, editable=False)
+    share_location_with_friends = models.BooleanField(default=False)
+    snooze_enabled = models.BooleanField(default=False)
+    last_latitude = models.FloatField(null=True, blank=True)
+    last_longitude = models.FloatField(null=True, blank=True)
+    location_updated_at = models.DateTimeField(null=True, blank=True)
+    last_city = models.CharField(max_length=120, null=True, blank=True)
+    last_state = models.CharField(max_length=120, null=True, blank=True)
 
     def get_partner(self):
-        mappings = UserPartnerMappings.objects.filter(
-            (Q(user=self) | Q(partner=self)) & Q(is_active=True)
-        )
-        if mappings.exists():
-            mapping = mappings.first()
-            return mapping.partner if mapping.user == self else mapping.user
-        return None
+        """Return first partner for backward compatibility."""
+        partners = self.get_partners()
+        return partners[0] if partners else None
+
+    def get_partners(self):
+        """Return all active partner profiles (friends), excluding self."""
+        mappings = UserPartnerMappings.objects.filter(user=self, is_active=True)
+        return [m.partner for m in mappings]
+
+    def is_partner_with(self, other_profile):
+        """True if this profile has an active link with other_profile."""
+        if other_profile is None or other_profile == self:
+            return False
+        return UserPartnerMappings.objects.filter(
+            user=self, partner=other_profile, is_active=True
+        ).exists()
 
     def __str__(self):
-        partner = self.get_partner()
-        return f"{self.user.email} - Partner: {partner.user.email if partner else 'None'}"
+        partners = self.get_partners()
+        return f"{self.user.email} - Partners: {', '.join(p.user.email for p in partners) or 'None'}"
 
     def is_missing(self):
         return timezone.now() - self.last_check_in > timezone.timedelta(hours=48)
