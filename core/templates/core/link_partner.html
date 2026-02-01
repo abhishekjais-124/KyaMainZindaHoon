@@ -1,30 +1,70 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
 {% include 'core/app_icon.html' %}
-{% if messages %}
-    <div class="w-full flex flex-col items-center mt-4">
-        {% for message in messages %}
-            <div class="px-6 py-3 rounded-xl shadow-lg mb-2 text-center font-semibold animate-fade-in
-                {% if message.tags == 'error' %}bg-red-500/80 text-white{% elif message.tags == 'success' %}bg-green-500/80 text-white{% else %}bg-gray-700/80 text-white{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
-<div class="flex flex-col items-center" style="min-height: 60vh;">
-    <div class="w-full max-w-xl bg-black/60 rounded-3xl shadow-2xl p-4 flex flex-col items-center animate-fade-in backdrop-blur-lg border border-white/10 mt-10">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-center mb-8 text-white drop-shadow-lg">Add a Friend</h1>
-        <p class="text-center mb-8 text-white/80">Enter your friend's invite code to add them.</p>
-        <form method="post" class="w-full animate-fade-in">
-            {% csrf_token %}
-            <input type="text" name="invite_code" maxlength="5" placeholder="Friend's Invite Code" required class="w-full p-3 mb-6 bg-black/40 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all duration-300 shadow-lg backdrop-blur-lg">
-            <button type="submit" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white/30">Add Friend</button>
-        </form>
-    </div>
-</div>
+
 <style>
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.animate-fade-in { animation: fade-in 0.7s cubic-bezier(.4,0,.2,1) both; }
+body, html { overflow: auto !important; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.link-fade-in { animation: fade-in 0.4s cubic-bezier(0.4,0,0.2,1) both; }
 </style>
+
+<div class="w-full min-h-screen flex flex-col items-center justify-center px-4 pt-4 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800 -translate-y-28">
+  <div class="w-full max-w-sm flex flex-col gap-4">
+
+    {% if messages %}
+    <div class="link-fade-in w-full flex flex-col gap-2">
+      {% for message in messages %}
+      <div class="px-4 py-2.5 rounded-xl text-center font-semibold text-sm
+        {% if message.tags == 'error' %}bg-red-500/20 border border-red-400/30 text-red-300
+        {% elif message.tags == 'success' %}bg-green-500/20 border border-green-400/30 text-green-300
+        {% else %}bg-white/10 border border-white/10 text-white/90{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="link-fade-in text-center">
+      <h1 class="text-xl font-bold text-white/95 tracking-tight">Add a friend</h1>
+      <p class="text-xs text-white/50 mt-0.5">Link with someone using their invite code</p>
+    </div>
+
+    <div class="link-fade-in w-full rounded-2xl border border-white/10 bg-black/50 shadow-xl backdrop-blur-xl overflow-hidden" style="animation-delay: 0.06s;">
+      <div class="px-4 py-3 border-b border-white/5">
+        <div class="flex items-center gap-2.5">
+          <span class="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 border border-white/10">
+            <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+            </svg>
+          </span>
+          <div>
+            <p class="text-sm font-semibold text-white/90">Invite code</p>
+            <p class="text-[11px] text-white/50">5-letter code from the app</p>
+          </div>
+        </div>
+      </div>
+      <form method="post" class="px-4 py-4 space-y-3">
+        {% csrf_token %}
+        <div>
+          <label for="invite-code-input" class="block text-xs font-medium text-white/50 mb-1.5" style="margin-top: -2rem">Code</label>
+          <input type="text" id="invite-code-input" name="invite_code" maxlength="5" placeholder="E.G. A1B2C" required
+            class="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white text-center placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 transition-all duration-200 font-mono text-base tracking-[0.2em] uppercase"
+            autocomplete="off" />
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl font-semibold text-sm text-white bg-black/40 backdrop-blur-xl border border-white/20 hover:bg-black/50 hover:border-white/30 transition-all duration-200 active:scale-[0.98]">
+          Add friend
+        </button>
+      </form>
+    </div>
+
+    <div class="link-fade-in text-center" style="animation-delay: 0.1s;">
+      <a href="{% url 'friends' %}" class="inline-flex items-center gap-2 text-sm font-medium text-white/55 hover:text-white/85 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        View my connections
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}

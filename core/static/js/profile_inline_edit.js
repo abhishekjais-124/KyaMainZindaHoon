@@ -17,8 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
     input.style.width = (nameSpan.offsetWidth + 20) + 'px';
     nameSpan.innerHTML = '';
     nameSpan.appendChild(input);
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
+    // Defer focus so iOS/Android open the keyboard (focus in same tick as touch is often ignored)
+    setTimeout(function() {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }, 0);
 
     function saveName() {
       const newName = input.value.trim();
@@ -61,9 +64,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  nameSpan.addEventListener('click', activateEdit);
-  nameSpan.addEventListener('touchend', function(e) {
+  // Use pointerup so one handler works for touch and mouse; avoids iOS 300ms delay and focus issues
+  nameSpan.addEventListener('pointerup', function(e) {
     e.preventDefault();
+    activateEdit();
+  });
+  // Fallback for browsers that don't fire pointerup (e.g. old Android)
+  nameSpan.addEventListener('click', function(e) {
+    if (nameSpan.querySelector('input')) return;
     activateEdit();
   });
 });

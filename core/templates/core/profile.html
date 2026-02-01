@@ -1,58 +1,54 @@
 <style>
-body, html {
-  overflow: hidden !important;
-}
+body, html { overflow: hidden !important; }
 </style>
 
 {% extends 'core/base.html' %}
 {% load static %}
 
 {% block content %}
-<!-- Project Icon absolute top-left, same as other pages -->
 {% include 'core/app_icon.html' %}
-<!-- Settings icon top-right: subtle black circular bg, slightly lower -->
-<div class="absolute right-0 top-0 mt-8 mr-4 z-20 flex items-center justify-end">
-  <a href="{% url 'settings' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/50 text-white/45 hover:text-white/70 hover:bg-black/60 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white/20" aria-label="Settings">
+<div class="absolute right-0 top-0 mt-11 mr-4 z-20 flex items-center justify-end">
+  <a href="{% url 'settings' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white/50 hover:text-white/80 hover:bg-black/50 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white/20" aria-label="Settings">
     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.213-1.281z" />
       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   </a>
 </div>
-<div class="min-h-screen flex flex-col items-center px-4 pt-36 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-2xl p-6 flex flex-col items-center relative">
-    <!-- Profile Icon -->
-    <span class="inline-flex items-center justify-center w-20 h-20 rounded-full border-2 border-white/20 bg-black/30 mb-6">
-      <svg width="56" height="56" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="14" stroke="white" stroke-width="2" fill="rgba(255,255,255,0.08)"/>
-        <path d="M16 18c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm0 2c-4.418 0-8 2.239-8 5v1a1 1 0 001 1h14a1 1 0 001-1v-1c0-2.761-3.582-5-8-5z" fill="white" fill-opacity="0.8"/>
+
+<div class="min-h-screen flex flex-col items-center px-4 pt-28 pb-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-2xl p-6 flex flex-col items-center">
+    <!-- Avatar -->
+    <span class="inline-flex items-center justify-center w-20 h-20 rounded-full border-2 border-white/20 bg-white/10 mb-5 ring-2 ring-white/5">
+      <svg class="w-10 h-10 text-white/80" width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2" fill="none" opacity="0.9"/>
+        <path d="M16 18c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm0 2c-4.418 0-8 2.239-8 5v1a1 1 0 001 1h14a1 1 0 001-1v-1c0-2.761-3.582-5-8-5z" fill="currentColor" fill-opacity="0.8"/>
       </svg>
     </span>
-    <!-- User Info -->
-    <div class="w-full flex flex-col items-center mb-6">
-      <div class="w-full bg-black/60 rounded-xl py-3 mb-2 flex flex-col items-center">
-        <span id="editable-full-name" class="text-2xl font-bold text-white cursor-pointer hover:bg-white/10 transition-all duration-200">{{ user.get_full_name|default:user.username }}</span>
+    <!-- Name (editable) -->
+    <div class="w-full flex flex-col items-center mb-5">
+      <div class="w-full rounded-xl py-3 px-4 bg-black/30 border border-white/5 flex flex-col items-center">
+        <span id="editable-full-name" class="text-xl font-bold text-white cursor-pointer rounded-lg px-2 py-1 -m-1 hover:bg-white/5 transition-all duration-200" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; display: inline-flex; align-items: center;">{{ user.get_full_name|default:user.username }}</span>
       </div>
-      <span class="text-gray-400 text-xs">{{ request.user.email }}</span>
-    <form method="post" style="display:none;">
-      {% csrf_token %}
-    </form>
-    {% block extra_js %}
-    <script src="{% static 'js/profile_inline_edit.js' %}"></script>
-    {% endblock %}
+      <span class="text-white/45 text-sm mt-2 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-white/35 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        {{ request.user.email }}
+      </span>
+      <form method="post" style="display:none;">{% csrf_token %}</form>
+      {% block extra_js %}
+      <script src="{% static 'js/profile_inline_edit.js' %}"></script>
+      {% endblock %}
     </div>
-    <!-- Logout Button -->
-    <form method="post" action="{% url 'account_logout' %}" class="w-full mt-4">
+    <!-- Logout -->
+    <form method="post" action="{% url 'account_logout' %}" class="w-full mt-2">
       {% csrf_token %}
-      <button type="submit" class="w-full py-3 rounded-xl bg-black/60 hover:bg-white/10 text-red-500 font-bold text-lg shadow-lg border border-white/10 transition-all duration-300">
+      <button type="submit" class="w-full py-3 rounded-xl bg-red-500/15 border border-red-400/30 text-red-400 hover:bg-red-500/25 hover:border-red-400/40 font-medium text-sm transition-all duration-200">
         Logout
       </button>
     </form>
-    <!-- Copyright & Credits -->
-    <div class="w-full text-center mt-8 mb-2">
-      <p class="text-xs text-gray-400/70 font-medium tracking-wide select-none" style="letter-spacing: 0.04em;">
-        &copy; 2026 Am I Ok? - AJ
-      </p>
+    <!-- Footer -->
+    <div class="w-full text-center mt-8 pt-4 border-t border-white/5">
+      <p class="text-xs text-white/40 tracking-wide select-none">&copy; 2026 Am I Ok?</p>
     </div>
   </div>
 </div>

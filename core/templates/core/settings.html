@@ -1,8 +1,5 @@
 <style>
-body, html {
-  overflow: hidden !important;
-}
-/* Stylish switch */
+body, html { overflow: hidden !important; }
 .settings-switch {
   -webkit-appearance: none;
   appearance: none;
@@ -44,7 +41,6 @@ body, html {
 .settings-switch:checked::before {
   transform: translateX(1.5rem);
 }
-/* Danger (red) snooze switch */
 .settings-switch.snooze-switch:checked {
   background: rgba(220, 38, 38, 0.5);
   border-color: rgba(220, 38, 38, 0.6);
@@ -62,72 +58,71 @@ body, html {
 {% block content %}
 {% include 'core/app_icon.html' %}
 
-<!-- Close button top-right -->
-<div class="absolute right-0 top-0 mt-8 mr-4 z-20 flex items-center justify-end">
-  <a href="{% url 'profile' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white/30" aria-label="Close settings">
-    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+<div class="absolute right-0 top-0 mt-11 mr-4 z-20 flex items-center justify-end">
+  <a href="{% url 'profile' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white/50 hover:text-white/80 hover:bg-black/50 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white/20" aria-label="Close settings">
+    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   </a>
 </div>
 
-<div class="min-h-screen flex flex-col items-center px-4 pt-32 pb-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="w-full max-w-sm">
-    <h1 class="text-xl font-semibold text-white/90 mb-3 tracking-tight text-center w-full">Settings</h1>
+<div class="min-h-screen flex flex-col items-center px-4 pt-28 pb-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="w-full max-w-sm flex flex-col gap-5">
+    <div class="text-center">
+      <h1 class="text-2xl font-bold text-white/95 tracking-tight">Settings</h1>
+      <p class="text-sm text-white/50 mt-1">Preferences and privacy</p>
+    </div>
 
     <div class="rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl overflow-hidden">
-      <!-- Location sharing row -->
-      <div class="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/5">
-        <label for="share-location-switch" class="flex-1 cursor-pointer min-w-0">
-          <p class="text-sm text-white/95 font-medium leading-snug">Share the location information with all friends</p>
-          <p class="text-[11px] text-white/45 mt-0.5">Let friends see your location when you check in</p>
+      <!-- Location sharing -->
+      <div class="flex items-center justify-between gap-4 px-4 py-4">
+        <label for="share-location-switch" class="flex-1 cursor-pointer min-w-0 flex items-start gap-3">
+          <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </span>
+          <span class="min-w-0">
+            <p class="text-sm font-semibold text-white/95 leading-snug">Share location with friends</p>
+            <p class="text-xs text-white/45 mt-0.5">Friends can see your location when you check in</p>
+          </span>
         </label>
-        <input
-          type="checkbox"
-          id="share-location-switch"
-          class="settings-switch"
-          {% if profile.share_location_with_friends %}checked{% endif %}
-          data-csrf="{{ csrf_token }}"
-        >
+        <input type="checkbox" id="share-location-switch" class="settings-switch" {% if profile.share_location_with_friends %}checked{% endif %} data-csrf="{{ csrf_token }}">
       </div>
-      <!-- Snooze / Pause attendance row (danger switch) -->
-      <div class="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/5">
-        <label for="snooze-switch" class="flex-1 cursor-pointer min-w-0">
-          <p class="text-sm text-white/95 font-medium leading-snug">Stop marking attendance (Snooze)</p>
-          <p class="text-[11px] text-white/45 mt-0.5">Your status will show as Paused to friends</p>
+      <!-- Snooze -->
+      <div class="flex items-center justify-between gap-4 px-4 py-4 bg-black/20">
+        <label for="snooze-switch" class="flex-1 cursor-pointer min-w-0 flex items-start gap-3">
+          <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-red-500/15 border border-red-400/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-red-400/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <span class="min-w-0">
+            <p class="text-sm font-semibold text-white/95 leading-snug">Pause attendance (Snooze)</p>
+            <p class="text-xs text-white/45 mt-0.5">Your status shows as Paused to friends</p>
+          </span>
         </label>
-        <input
-          type="checkbox"
-          id="snooze-switch"
-          class="settings-switch snooze-switch"
-          {% if profile.snooze_enabled %}checked{% endif %}
-          data-csrf="{{ csrf_token }}"
-        >
+        <input type="checkbox" id="snooze-switch" class="settings-switch snooze-switch" {% if profile.snooze_enabled %}checked{% endif %} data-csrf="{{ csrf_token }}">
       </div>
     </div>
   </div>
 </div>
 
 <!-- Snooze confirmation popup -->
-<div id="snooze-confirm-popup" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" style="backdrop-filter: blur(8px); background: rgba(0,0,0,0.6);">
-  <div class="relative w-full max-w-sm rounded-2xl overflow-hidden border border-red-500/30 shadow-2xl" style="background: linear-gradient(165deg, rgba(30,20,20,0.98) 0%, rgba(18,12,12,0.98) 100%);">
+<div id="snooze-confirm-popup" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" style="backdrop-filter: blur(12px); background: rgba(0,0,0,0.6);">
+  <div class="relative w-full max-w-sm rounded-3xl overflow-hidden border border-white/10 bg-black/90 shadow-2xl">
     <div class="p-6">
       <div class="flex items-center gap-3 mb-4">
-        <span class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/20">
-          <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-red-500/20 border border-red-400/25">
+          <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </span>
         <h3 class="text-lg font-bold text-white">Enable Snooze?</h3>
       </div>
-      <p class="text-sm text-white/80 leading-relaxed mb-2">If you enable Snooze:</p>
-      <ul class="text-sm text-white/70 space-y-1 mb-5 list-disc list-inside">
-        <li>Your status will show as <strong class="text-gray-300">Paused</strong> to all friends</li>
+      <p class="text-sm text-white/70 leading-relaxed mb-3">If you enable Snooze:</p>
+      <ul class="text-sm text-white/60 space-y-2 mb-6 list-disc list-inside">
+        <li>Your status will show as <strong class="text-white/80">Paused</strong> to all friends</li>
         <li>You can stop checking in temporarily</li>
-        <li>Friends may not get alerts if you don’t check in for a while</li>
-        <li>Turn Snooze off in Settings when you want to resume</li>
+        <li>Turn Snooze off here when you want to resume</li>
       </ul>
       <div class="flex gap-3">
-        <button type="button" id="snooze-confirm-cancel" class="flex-1 py-2.5 rounded-xl font-semibold text-sm border border-white/20 text-white/90 hover:bg-white/10 transition-colors">Cancel</button>
-        <button type="button" id="snooze-confirm-enable" class="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-red-500/30 text-red-400 border border-red-400/40 hover:bg-red-500/40 transition-colors">Enable</button>
+        <button type="button" id="snooze-confirm-cancel" class="flex-1 py-3 rounded-xl font-semibold text-sm bg-black/30 border border-white/10 text-white/90 hover:bg-white/10 transition-colors">Cancel</button>
+        <button type="button" id="snooze-confirm-enable" class="flex-1 py-3 rounded-xl font-semibold text-sm bg-red-500/25 text-red-400 border border-red-400/30 hover:bg-red-500/35 transition-colors">Enable</button>
       </div>
     </div>
   </div>

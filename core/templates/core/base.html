@@ -42,7 +42,7 @@
       function hideLoader() {
           document.getElementById('funny-loading').style.display = 'none';
       }
-      // Hide loader by default on page load
+      // Show loader until page is ready (visible by default in HTML); hide when DOM is loaded
       document.addEventListener('DOMContentLoaded', function() {
           hideLoader();
       });
