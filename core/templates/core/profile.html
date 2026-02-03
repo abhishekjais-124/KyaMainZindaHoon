@@ -17,7 +17,7 @@ body, html { overflow: hidden !important; }
 </div>
 
 <div class="min-h-screen flex flex-col items-center px-4 pt-28 pb-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-2xl p-6 flex flex-col items-center">
+  <div class="w-full min-w-[17rem] max-w-sm rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-2xl p-6 flex flex-col items-center">
     <!-- Avatar -->
     <span class="inline-flex items-center justify-center w-20 h-20 rounded-full border-2 border-white/20 bg-white/10 mb-5 ring-2 ring-white/5">
       <svg class="w-10 h-10 text-white/80" width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -28,12 +28,13 @@ body, html { overflow: hidden !important; }
     <!-- Name (editable) -->
     <div class="w-full flex flex-col items-center mb-5">
       <div class="w-full rounded-xl py-3 px-4 bg-black/30 border border-white/5 flex flex-col items-center">
-        <span id="editable-full-name" class="text-xl font-bold text-white cursor-pointer rounded-lg px-2 py-1 -m-1 hover:bg-white/5 transition-all duration-200" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; display: inline-flex; align-items: center;">{{ user.get_full_name|default:user.username }}</span>
+        <span id="editable-full-name" class="text-xl font-bold text-white cursor-pointer rounded-lg px-2 py-1 -m-1 hover:bg-white/5 transition-all duration-200" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; display: inline-flex; align-items: center;">{{ user.get_full_name|default:user.username|default:user.email }}</span>
       </div>
-      <span class="text-white/45 text-sm mt-2 flex items-center gap-1.5">
+      <!-- Fixed-height row so card doesn't shrink when email is empty -->
+      <div class="w-full mt-2 h-6 flex items-center justify-center gap-1.5 text-white/45 text-sm">
         <svg class="w-4 h-4 text-white/35 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-        {{ request.user.email }}
-      </span>
+        {% if request.user.email %}<span class="truncate">{{ request.user.email }}</span>{% else %}<span class="text-white/30">—</span>{% endif %}
+      </div>
       <form method="post" style="display:none;">{% csrf_token %}</form>
       {% block extra_js %}
       <script src="{% static 'js/profile_inline_edit.js' %}"></script>

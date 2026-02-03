@@ -37,11 +37,11 @@ def send_alert_via_emailjs(profile):
     if not partners:
         return False
 
-    user_name = profile.user.get_full_name() or profile.user.email
+    user_name = profile.user.get_full_name() or profile.user.username or profile.user.email
     url = f"https://api.emailjs.com/api/v1.0/email/send"
     any_sent = False
     for partner in partners:
-        partner_name = partner.user.get_full_name() or partner.user.email
+        partner_name = partner.user.get_full_name() or partner.user.username or partner.user.email
         message = f"Oye {partner_name}, {user_name} gayab ho gaya hai! Check karo jaldi. Sab changa si? Am I Alive app se alert."
         payload = {
             "service_id": service_id,

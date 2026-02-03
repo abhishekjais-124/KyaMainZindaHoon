@@ -1,22 +1,26 @@
-# Alert popups
-from django.http import HttpResponse
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.contrib import messages
+from django.contrib.auth.models import User
+from django.contrib.auth import login as auth_login
+from datetime import timedelta
+from allauth.account.forms import LoginForm, SignupForm
+from allauth.account.utils import perform_login
+from .models import Profile, UserPartnerMappings, SOSAlert, SOSResolvedNotification
+from .utils import send_alert_via_emailjs
+from django.utils import timezone
+from django.http import JsonResponse
+from django.db.models import Q
+
 
 def alert_danger(request):
     return render(request, 'core/message_popup.html', {'message_title': 'Danger!', 'message_text': 'This is a danger alert.', 'message_type': 'danger'})
 
+
 def alert_warning(request):
     return render(request, 'core/message_popup.html', {'message_title': 'Warning!', 'message_text': 'This is a warning alert.', 'message_type': 'warning'})
-from django.views.decorators.http import require_GET, require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.models import User
-from .models import Profile
-from .utils import send_alert_via_emailjs
-from django.utils import timezone
-from django.http import JsonResponse
-from .models import UserPartnerMappings
-from django.db.models import Q
 
 @login_required
 def invite_code_popup(request):
@@ -90,13 +94,61 @@ def friends_view(request):
                 return JsonResponse({'success': False, 'message': 'User not found.'})
             messages.error(request, 'User not found.')
 
-    # Only show active mappings
-    paired_users = []
+    # Build connections list with emergency flag
+    connections = []
     active_mappings = UserPartnerMappings.objects.filter(user=profile, is_active=True)
     for mapping in active_mappings:
-        paired_users.append(mapping.partner.user)
+        connections.append({
+            'user': mapping.partner.user,
+            'is_emergency': mapping.is_emergency,
+        })
 
-    return render(request, 'core/friends.html', {'paired_users': paired_users})
+    # Active SOS alerts received by this user (for "who triggered SOS" on friends page)
+    def _display_name(u):
+        name = (u.get_full_name() or '').strip()
+        return name or u.username or u.email or 'Someone'
+
+    def _location_str(p):
+        parts = [x for x in (p.last_city, p.last_state) if x]
+        return ', '.join(parts) if parts else None
+
+    active_sos = SOSAlert.objects.filter(to_user=profile, status=SOSAlert.Status.ACTIVE).select_related('from_user', 'from_user__user')
+    active_sos_alerts = [
+        {
+            'id': a.id,
+            'from_name': _display_name(a.from_user.user),
+            'from_username': a.from_user.user.username,
+            'from_email': a.from_user.user.email,
+            'created_at': a.created_at,
+            'location': _location_str(a.from_user),
+        }
+        for a in active_sos
+    ]
+
+    return render(request, 'core/friends.html', {
+        'connections': connections,
+        'active_sos_alerts': active_sos_alerts,
+    })
+
+
+@login_required
+@require_POST
+def friends_save_emergency(request):
+    """Save which connections are marked as emergency. Expects JSON: { \"emergency_emails\": [\"a@b.com\", ...] }."""
+    import json
+    profile = request.user.profile
+    try:
+        data = json.loads(request.body)
+        emergency_emails = set((data.get('emergency_emails') or []))
+    except Exception:
+        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+    mappings = UserPartnerMappings.objects.filter(user=profile, is_active=True)
+    for mapping in mappings:
+        email = mapping.partner.user.email
+        mapping.is_emergency = email in emergency_emails
+        mapping.save(update_fields=['is_emergency'])
+    return JsonResponse({'success': True, 'message': 'Emergency contacts saved.'})
+
 
 @login_required
 def profile_view(request):
@@ -182,17 +234,49 @@ def settings_view(request):
 
 
 def home(request):
-    if not request.user.is_authenticated:
-        return render(request, 'core/home.html')
-    profile = request.user.profile
-    return render(request, 'core/dashboard.html', {'profile': profile})
+    if request.user.is_authenticated:
+        profile = request.user.profile
+        return render(request, 'core/dashboard.html', {'profile': profile})
+    login_form = LoginForm(request.POST or None, request=request)
+    signup_form = SignupForm(request.POST or None)
+    active_tab = 'login'
+    if request.method == 'POST':
+        if request.POST.get('form_type') == 'login' and login_form.is_valid():
+            perform_login(request, login_form.user, email_verification='optional')
+            # Remember me: persist session for 2 weeks; otherwise expire when browser closes
+            if request.POST.get('remember'):
+                request.session.set_expiry(timedelta(days=14))
+            else:
+                request.session.set_expiry(0)
+            return redirect('dashboard')
+        if request.POST.get('form_type') == 'signup' and signup_form.is_valid():
+            user = signup_form.save(request)
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('dashboard')
+        if request.POST.get('form_type') == 'signup':
+            active_tab = 'signup'
+    return render(request, 'core/home.html', {
+        'login_form': login_form,
+        'signup_form': signup_form,
+        'active_auth_tab': active_tab,
+    })
 
 @login_required
 def dashboard(request):
     profile = request.user.profile
     if not profile.get_partners():
         return redirect('link_partner')
-    return render(request, 'core/dashboard.html', {'profile': profile})
+    has_emergency_contacts = UserPartnerMappings.objects.filter(
+        user=profile, is_active=True, is_emergency=True
+    ).exists()
+    has_active_sos_sent = SOSAlert.objects.filter(
+        from_user=profile, status=SOSAlert.Status.ACTIVE
+    ).exists()
+    return render(request, 'core/dashboard.html', {
+        'profile': profile,
+        'has_emergency_contacts': has_emergency_contacts,
+        'has_active_sos_sent': has_active_sos_sent,
+    })
 
 @login_required
 def link_partner(request):
@@ -210,7 +294,7 @@ def link_partner(request):
                     UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
                     UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
                     messages.success(request, "Friend added!")
-                    return redirect('dashboard')
+                    return redirect(reverse('friends') + '?member_added=1')
         except Profile.DoesNotExist:
             messages.error(request, "User with this invite code does not exist.")
     return render(request, 'core/link_partner.html')
@@ -249,3 +333,157 @@ def check_in(request):
         profile.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
+
+
+# --- SOS (emergency) feature ---
+
+@login_required
+@require_POST
+def sos_trigger(request):
+    """Create active SOS alerts only to emergency contacts. Called after 10s countdown (no cancel)."""
+    profile = request.user.profile
+    if SOSAlert.objects.filter(from_user=profile, status=SOSAlert.Status.ACTIVE).exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'You already have an active SOS. It must be resolved before you can send another.',
+        }, status=400)
+    emergency_mappings = UserPartnerMappings.objects.filter(
+        user=profile, is_active=True, is_emergency=True
+    )
+    if not emergency_mappings.exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'No emergency contacts. Choose them on the Friends page and save.',
+        }, status=400)
+    for mapping in emergency_mappings:
+        SOSAlert.objects.create(from_user=profile, to_user=mapping.partner, status=SOSAlert.Status.ACTIVE)
+    return JsonResponse({'success': True, 'message': 'SOS sent to your emergency contacts.'})
+
+
+@login_required
+@require_GET
+def sos_has_emergency_contacts(request):
+    """Return whether the current user has emergency contacts and if they already have an active SOS sent."""
+    profile = request.user.profile
+    has_emergency = UserPartnerMappings.objects.filter(
+        user=profile, is_active=True, is_emergency=True
+    ).exists()
+    has_active_sos_sent = SOSAlert.objects.filter(
+        from_user=profile, status=SOSAlert.Status.ACTIVE
+    ).exists()
+    return JsonResponse({
+        'has_emergency_contacts': has_emergency,
+        'has_active_sos_sent': has_active_sos_sent,
+    })
+
+
+@login_required
+@require_GET
+def sos_list(request):
+    """List active SOS alerts received by the current user (for dashboard)."""
+    profile = request.user.profile
+    alerts = SOSAlert.objects.filter(to_user=profile, status=SOSAlert.Status.ACTIVE).select_related('from_user', 'from_user__user')
+    def _location_str(p):
+        parts = [x for x in (p.last_city, p.last_state) if x]
+        return ', '.join(parts) if parts else None
+
+    def _display_name(u):
+        name = (u.get_full_name() or '').strip()
+        return name or u.username or u.email or 'Someone'
+
+    data = [
+        {
+            'id': a.id,
+            'from_name': _display_name(a.from_user.user),
+            'from_username': a.from_user.user.username,
+            'from_email': a.from_user.user.email,
+            'created_at': a.created_at.isoformat(),
+            'location': _location_str(a.from_user),
+            'location_updated_at': a.from_user.location_updated_at.isoformat() if a.from_user.location_updated_at else None,
+        }
+        for a in alerts
+    ]
+    return JsonResponse({'alerts': data})
+
+
+@login_required
+@require_POST
+def sos_resolve(request):
+    """Mark an SOS alert as resolved. Expects JSON body: { "alert_id": <id> }."""
+    profile = request.user.profile
+    try:
+        import json
+        data = json.loads(request.body)
+        alert_id = data.get('alert_id')
+    except Exception:
+        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+    if not alert_id:
+        return JsonResponse({'success': False, 'message': 'alert_id required.'}, status=400)
+    try:
+        alert = SOSAlert.objects.get(id=alert_id, to_user=profile, status=SOSAlert.Status.ACTIVE)
+    except SOSAlert.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Alert not found or already resolved.'}, status=404)
+    from_profile = alert.from_user
+    now = timezone.now()
+    # When any emergency contact resolves, clear this SOS for everyone (all recipients)
+    SOSAlert.objects.filter(
+        from_user=from_profile,
+        status=SOSAlert.Status.ACTIVE
+    ).update(status=SOSAlert.Status.RESOLVED, resolved_at=now, resolved_by_id=profile.pk)
+    # Notify the person who triggered the SOS so they see the resolved alert on dashboard
+    try:
+        SOSResolvedNotification.objects.create(
+            triggerer=from_profile,
+            resolved_by=profile,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning('SOSResolvedNotification create failed: %s', e)
+    return JsonResponse({'success': True, 'message': 'SOS marked as resolved.'})
+
+
+@login_required
+@require_GET
+def sos_resolved_notifications(request):
+    """List unseen 'your SOS was resolved' notifications for the current user (triggerer)."""
+    try:
+        profile = request.user.profile
+        def _display_name(u):
+            name = (u.get_full_name() or '').strip()
+            return name or u.username or u.email or 'Someone'
+        notifications = SOSResolvedNotification.objects.filter(
+            triggerer=profile, seen=False
+        ).select_related('resolved_by', 'resolved_by__user').order_by('-created_at')
+        data = [
+            {
+                'id': n.id,
+                'resolved_by_name': _display_name(n.resolved_by.user),
+                'resolved_by_username': n.resolved_by.user.username,
+                'resolved_by_email': n.resolved_by.user.email,
+                'resolved_at': n.created_at.isoformat(),
+            }
+            for n in notifications
+        ]
+        return JsonResponse({'notifications': data})
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception('sos_resolved_notifications failed')
+        return JsonResponse({'notifications': []})
+
+
+@login_required
+@require_POST
+def sos_resolved_notifications_seen(request):
+    """Mark resolved notifications as seen. Expects JSON body: { "ids": [1, 2, ...] }."""
+    profile = request.user.profile
+    try:
+        import json
+        data = json.loads(request.body)
+        ids = data.get('ids') or []
+    except Exception:
+        return JsonResponse({'success': False}, status=400)
+    if ids:
+        SOSResolvedNotification.objects.filter(
+            id__in=ids, triggerer=profile, seen=False
+        ).update(seen=True)
+    return JsonResponse({'success': True})

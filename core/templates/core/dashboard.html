@@ -98,7 +98,34 @@
             </button>
             <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
             <p class="text-xs sm:text-sm text-white/40 mt-1 text-center">Press and hold to mark attendance</p>
+            <!-- SOS Emergency button (red + disabled when active SOS; gray + disabled when no contacts; else enabled) -->
+            <div class="relative inline-block mt-4 group/sos">
+                <button type="button" id="sos-trigger-btn" class="sos-trigger-btn px-5 py-2.5 rounded-2xl border backdrop-blur-2xl font-semibold text-sm tracking-wide shadow-xl transition-all duration-300 touch-manipulation {% if has_active_sos_sent %}bg-red-500/80 border-red-400/60 text-white cursor-not-allowed hover:scale-100 active:scale-100{% elif not has_emergency_contacts %}border border-white/20 bg-black/40 text-white/90 opacity-50 cursor-not-allowed hover:scale-100 hover:bg-black/40 hover:border-white/20 active:scale-100 active:bg-black/40 active:border-white/20{% else %}border border-white/20 bg-black/40 text-white/90 hover:scale-125 hover:bg-red-500/80 hover:border-red-400/50 hover:text-white active:scale-125 active:bg-red-500/80 active:border-red-400/50 active:text-white{% endif %}"
+                    {% if not has_emergency_contacts or has_active_sos_sent %}disabled{% endif %}>
+                    SOS — Emergency
+                </button>
+                <div id="sos-tooltip" class="sos-tooltip absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-4 py-2.5 rounded-xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl text-center pointer-events-none opacity-0 invisible translate-y-1.5 transition-all duration-200 ease-out group-hover/sos:opacity-100 group-hover/sos:visible group-hover/sos:translate-y-0 whitespace-nowrap" style="{% if has_emergency_contacts and not has_active_sos_sent %}display:none;{% endif %}">
+                    <span id="sos-tooltip-text" class="text-xs font-medium text-white/90 tracking-wide">{% if has_active_sos_sent %}You have an active SOS. Wait for someone to resolve it.{% else %}Add emergency contacts{% endif %}</span>
+                    <span class="sos-tooltip-arrow absolute left-1/2 -translate-x-1/2 top-full mt-px w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-black/70"></span>
+                </div>
+            </div>
         </div>
+
+        <!-- You triggered an SOS (triggerer sees this until someone resolves) -->
+        {% if has_active_sos_sent %}
+        <div class="w-full max-w-md mx-auto mt-3 px-2 animate-fade-in">
+            <div class="rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 backdrop-blur-xl py-3 px-4 flex items-center gap-3">
+                <span class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </span>
+                <div>
+                    <p class="text-amber-200 font-semibold text-sm">You have triggered an SOS</p>
+                    <p class="text-amber-200/70 text-xs mt-0.5">Your emergency contacts have been notified. Wait for someone to mark it resolved. You cannot send another until this one is resolved.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if profile and profile.last_check_in %}
         <div class="w-full max-w-lg mx-auto mt-1 sm:mt-2 mb-4 flex justify-center">
             {% if profile.snooze_enabled %}
@@ -154,6 +181,39 @@
             </div>
         </div>
 </div>
+
+<!-- SOS 10-second countdown modal (sender) -->
+<div id="sos-countdown-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;">
+    <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-8 py-8 flex flex-col items-center gap-6 max-w-sm w-full animate-pop">
+        <div class="text-center">
+            <p class="text-white/90 font-semibold text-lg mb-1">Emergency SOS</p>
+            <p class="text-white/60 text-sm">Sending in <span id="sos-countdown-num" class="font-bold text-white">10</span> seconds. Cancel if this was accidental.</p>
+        </div>
+        <div class="w-20 h-20 rounded-full border-2 border-white/30 bg-white/5 flex items-center justify-center">
+            <span id="sos-countdown-circle" class="text-3xl font-bold text-white">10</span>
+        </div>
+        <button type="button" id="sos-countdown-cancel" class="w-full py-3 rounded-2xl border border-white/20 bg-white/10 text-white font-medium hover:bg-white/20 transition-all duration-300">Cancel</button>
+    </div>
+</div>
+
+<!-- SOS: recipient alerts + triggerer resolved notifications (stacked at top of home) -->
+<div id="sos-dashboard-notifications" class="fixed top-4 left-4 right-4 z-[55] flex flex-col gap-3 max-w-md mx-auto">
+    <div id="sos-alerts-container" class="flex flex-col gap-3" style="display:none;"></div>
+    <div id="sos-resolved-notifications-container" class="flex flex-col gap-3" style="display:none;"></div>
+</div>
+
+<!-- Resolve confirmation modal -->
+<div id="sos-resolve-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;">
+    <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-6 py-6 max-w-sm w-full animate-pop">
+        <p class="text-white/90 font-semibold mb-2">Mark SOS as resolved?</p>
+        <p class="text-white/60 text-sm mb-4 leading-relaxed">If you mark this as resolved: the emergency alert will be closed, and the sender will no longer see this as an active SOS. Only mark resolved when you have confirmed they are safe.</p>
+        <div class="flex gap-3">
+            <button type="button" id="sos-resolve-cancel" class="flex-1 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium">Cancel</button>
+            <button type="button" id="sos-resolve-confirm" class="flex-1 py-2.5 rounded-xl bg-white/20 border border-white/20 text-white text-sm font-semibold hover:bg-white/30 transition-all">Resolve</button>
+        </div>
+    </div>
+</div>
+
         <script>
         const loaderBtn = document.getElementById('loader-btn');
         const loaderNumber = document.getElementById('loader-number');
@@ -289,6 +349,332 @@
         setNumber(0);
         </script>
 
+        <!-- SOS: 10s countdown then trigger -->
+        <script>
+        (function() {
+            var modal = document.getElementById('sos-countdown-modal');
+            var numEl = document.getElementById('sos-countdown-num');
+            var circleEl = document.getElementById('sos-countdown-circle');
+            var cancelBtn = document.getElementById('sos-countdown-cancel');
+            var triggerBtn = document.getElementById('sos-trigger-btn');
+            var countdownTimer = null;
+            var secondsLeft = 10;
+
+            function stopCountdown() {
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = null;
+                modal.style.display = 'none';
+            }
+
+            function runCountdown() {
+                if (triggerBtn && triggerBtn.disabled) return;
+                secondsLeft = 10;
+                numEl.textContent = circleEl.textContent = '10';
+                modal.style.display = 'flex';
+                countdownTimer = setInterval(function() {
+                    secondsLeft--;
+                    numEl.textContent = circleEl.textContent = secondsLeft;
+                    if (secondsLeft <= 0) {
+                        stopCountdown();
+                        var opts = { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content } };
+                        fetch('{% url "sos_trigger" %}', opts)
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                if (data.success) { location.reload(); return; }
+                                if (typeof showMessagePopup === 'function') showMessagePopup(false, data.message || 'Failed to send SOS.');
+                            })
+                            .catch(function() {
+                                if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Failed to send SOS.');
+                            });
+                    }
+                }, 1000);
+            }
+
+            if (triggerBtn) triggerBtn.addEventListener('click', runCountdown);
+            if (cancelBtn) cancelBtn.addEventListener('click', stopCountdown);
+        })();
+        </script>
+
+        <!-- SOS: enable/disable button based on emergency contacts and active SOS sent -->
+        <script>
+        (function() {
+            var triggerBtn = document.getElementById('sos-trigger-btn');
+            var tooltip = document.getElementById('sos-tooltip');
+            var tooltipText = document.getElementById('sos-tooltip-text');
+            if (!triggerBtn) return;
+
+            function updateSosButtonState() {
+                fetch('{% url "sos_has_emergency_contacts" %}')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var canTrigger = data.has_emergency_contacts && !data.has_active_sos_sent;
+                        var activeSos = data.has_active_sos_sent;
+                        // Remove all state-specific classes first
+                        triggerBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'hover:scale-100', 'hover:bg-black/40', 'hover:border-white/20', 'active:scale-100', 'active:bg-black/40', 'active:border-white/20', 'hover:scale-125', 'hover:bg-red-500/80', 'hover:border-red-400/50', 'hover:text-white', 'active:scale-125', 'active:bg-red-500/80', 'active:border-red-400/50', 'active:text-white', 'bg-red-500/80', 'border-red-400/60', 'text-white', 'border', 'border-white/20', 'bg-black/40', 'text-white/90');
+                        if (canTrigger) {
+                            triggerBtn.disabled = false;
+                            triggerBtn.classList.add('border', 'border-white/20', 'bg-black/40', 'text-white/90', 'hover:scale-125', 'hover:bg-red-500/80', 'hover:border-red-400/50', 'hover:text-white', 'active:scale-125', 'active:bg-red-500/80', 'active:border-red-400/50', 'active:text-white');
+                            if (tooltip) { tooltip.style.display = 'none'; }
+                        } else {
+                            triggerBtn.disabled = true;
+                            triggerBtn.classList.add('cursor-not-allowed', 'hover:scale-100', 'active:scale-100');
+                            if (activeSos) {
+                                triggerBtn.classList.add('border', 'bg-red-500/80', 'border-red-400/60', 'text-white');
+                            } else {
+                                triggerBtn.classList.add('border', 'border-white/20', 'bg-black/40', 'text-white/90', 'opacity-50', 'hover:bg-black/40', 'hover:border-white/20', 'active:bg-black/40', 'active:border-white/20');
+                            }
+                            if (tooltip) {
+                                tooltip.style.display = '';
+                                if (tooltipText) tooltipText.textContent = activeSos ? 'You have an active SOS. Wait for someone to resolve it.' : 'Add emergency contacts';
+                            }
+                        }
+                    })
+                    .catch(function() {});
+            }
+
+            updateSosButtonState();
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') updateSosButtonState();
+            });
+        })();
+        </script>
+
+        <!-- SOS: recipient alerts + poll + resolve -->
+        <script>
+        (function() {
+            var container = document.getElementById('sos-alerts-container');
+            var resolveModal = document.getElementById('sos-resolve-modal');
+            var resolveCancelBtn = document.getElementById('sos-resolve-cancel');
+            var resolveConfirmBtn = document.getElementById('sos-resolve-confirm');
+            var resolveAlertId = null;
+            var pollInterval = 15000;
+
+            function csrfHeader() {
+                var meta = document.querySelector('meta[name="csrf-token"]');
+                return meta ? meta.content : '';
+            }
+
+            function renderAlerts(alerts) {
+                if (!alerts || alerts.length === 0) {
+                    container.style.display = 'none';
+                    container.innerHTML = '';
+                    return;
+                }
+                container.style.display = 'flex';
+                container.innerHTML = alerts.map(function(a) {
+                    var timeStr = formatSosTime(a.created_at);
+                    var locationLine = a.location ? ('<p class="text-xs text-white/50 mt-1"><span class="text-white/60">Last known location:</span> ' + escapeHtml(a.location) + '</p>') : '';
+                    var contactLine = a.from_email ? ('<p class="text-xs text-white/50 mt-0.5">Contact: ' + escapeHtml(a.from_email) + '</p>') : '';
+                    return '<div class="sos-alert-card rounded-2xl border-2 border-red-500/50 bg-black/50 backdrop-blur-2xl shadow-2xl px-4 py-4 flex items-center gap-3 animate-pop" data-alert-id="' + a.id + '">' +
+                        '<div class="flex-1 min-w-0">' +
+                        '<p class="font-semibold text-white/95">' +
+                        '<span class="text-red-400 font-bold">' + escapeHtml(a.from_name || a.from_username || a.from_email || 'Someone') + '</span> needs help</p>' +
+                        '<p class="text-xs text-white/50 mt-0.5">Emergency SOS · ' + timeStr + '</p>' +
+                        contactLine +
+                        locationLine +
+                        '</div>' +
+                        '<button type="button" class="sos-alert-dismiss w-9 h-9 rounded-xl border border-white/15 bg-white/5 flex items-center justify-center text-white/70 hover:bg-white/15 transition-all" title="Dismiss">×</button>' +
+                        '<button type="button" class="sos-alert-resolve py-2 px-4 rounded-xl border border-white/20 bg-white/15 text-white text-sm font-medium hover:bg-white/25 transition-all">Resolve</button>' +
+                        '</div>';
+                }).join('');
+
+                container.querySelectorAll('.sos-alert-dismiss').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var card = btn.closest('.sos-alert-card');
+                        if (card) card.style.display = 'none';
+                    });
+                });
+                container.querySelectorAll('.sos-alert-resolve').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var card = btn.closest('.sos-alert-card');
+                        if (!card) return;
+                        resolveAlertId = card.getAttribute('data-alert-id');
+                        resolveModal.style.display = 'flex';
+                    });
+                });
+            }
+
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            function formatSosTime(isoString) {
+                if (!isoString) return '';
+                var d = new Date(isoString);
+                var now = new Date();
+                var sec = Math.floor((now - d) / 1000);
+                if (sec < 60) return 'Just now';
+                var min = Math.floor(sec / 60);
+                if (min < 60) return min === 1 ? '1 min ago' : min + ' min ago';
+                var hr = Math.floor(min / 60);
+                if (hr < 24) return hr === 1 ? '1 hr ago' : hr + ' hr ago';
+                var day = Math.floor(hr / 24);
+                if (day < 7) return day === 1 ? 'Yesterday' : day + ' days ago';
+                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            }
+
+            function fetchAlerts() {
+                fetch('{% url "sos_list" %}')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        renderAlerts(data.alerts || []);
+                    })
+                    .catch(function() {});
+            }
+
+            if (resolveCancelBtn) resolveCancelBtn.addEventListener('click', function() {
+                resolveModal.style.display = 'none';
+                resolveAlertId = null;
+            });
+            if (resolveConfirmBtn) resolveConfirmBtn.addEventListener('click', function() {
+                if (!resolveAlertId) return;
+                var alertId = parseInt(resolveAlertId, 10);
+                if (isNaN(alertId)) {
+                    if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Invalid alert.');
+                    return;
+                }
+                fetch('{% url "sos_resolve" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfHeader()
+                    },
+                    body: JSON.stringify({ alert_id: alertId })
+                })
+                    .then(function(r) {
+                        return r.text().then(function(text) {
+                            var data = {};
+                            try { data = JSON.parse(text); } catch (e) {}
+                            if (!r.ok) throw new Error(data.message || 'Failed to resolve.');
+                            return data;
+                        });
+                    })
+                    .then(function(data) {
+                        resolveModal.style.display = 'none';
+                        resolveAlertId = null;
+                        fetchAlerts();
+                        if (data.success && typeof showMessagePopup === 'function') showMessagePopup(true, 'SOS marked as resolved.');
+                    })
+                    .catch(function(err) {
+                        resolveModal.style.display = 'none';
+                        resolveAlertId = null;
+                        fetchAlerts();
+                        if (typeof showMessagePopup === 'function') showMessagePopup(false, err.message || 'Failed to resolve.');
+                    });
+            });
+
+            fetchAlerts();
+            setInterval(fetchAlerts, pollInterval);
+        })();
+        </script>
+
+        <!-- SOS resolved notifications (alert on home for triggerer, with full info) -->
+        <script>
+        (function() {
+            var container = document.getElementById('sos-resolved-notifications-container');
+            if (!container) return;
+
+            function csrfHeader() {
+                var meta = document.querySelector('meta[name="csrf-token"]');
+                return meta ? meta.content : '';
+            }
+
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            function formatResolvedTime(isoString) {
+                if (!isoString) return '';
+                var d = new Date(isoString);
+                var now = new Date();
+                var sec = Math.floor((now - d) / 1000);
+                if (sec < 60) return 'Just now';
+                var min = Math.floor(sec / 60);
+                if (min < 60) return min === 1 ? '1 min ago' : min + ' min ago';
+                var hr = Math.floor(min / 60);
+                if (hr < 24) return hr === 1 ? '1 hr ago' : hr + ' hr ago';
+                var day = Math.floor(hr / 24);
+                if (day < 7) return day === 1 ? 'Yesterday' : day + ' days ago';
+                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            }
+
+            function renderResolvedNotifications(notifications) {
+                if (!notifications || notifications.length === 0) {
+                    container.style.display = 'none';
+                    container.innerHTML = '';
+                    return;
+                }
+                container.style.display = 'flex';
+                container.innerHTML = notifications.map(function(n) {
+                    var name = n.resolved_by_name || n.resolved_by_username || n.resolved_by_email || 'an emergency contact';
+                    var timeStr = formatResolvedTime(n.resolved_at);
+                    var contactLine = n.resolved_by_email ? ('<p class="text-xs text-white/50 mt-1"><span class="text-white/60">Contact:</span> ' + escapeHtml(n.resolved_by_email) + '</p>') : '';
+                    return '<div class="sos-resolved-card rounded-2xl border-2 border-green-500/40 bg-black/50 backdrop-blur-2xl shadow-2xl px-4 py-4 flex items-start gap-3 animate-pop" data-notification-id="' + n.id + '">' +
+                        '<span class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">' +
+                        '<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
+                        '</span>' +
+                        '<div class="flex-1 min-w-0">' +
+                        '<p class="font-semibold text-green-300/95">SOS resolved</p>' +
+                        '<p class="text-sm text-white/90 mt-0.5">Your SOS was marked as resolved by <span class="font-medium text-white">' + escapeHtml(name) + '</span>.</p>' +
+                        '<p class="text-xs text-white/50 mt-1">Resolved ' + timeStr + '</p>' +
+                        contactLine +
+                        '</div>' +
+                        '<button type="button" class="sos-resolved-dismiss flex-shrink-0 py-2 px-3 rounded-xl border border-green-400/30 bg-green-500/15 text-green-300 text-sm font-medium hover:bg-green-500/25 transition-all" data-id="' + n.id + '">Dismiss</button>' +
+                        '</div>';
+                }).join('');
+
+                container.querySelectorAll('.sos-resolved-dismiss').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var id = parseInt(btn.getAttribute('data-id'), 10);
+                        if (isNaN(id)) return;
+                        fetch('{% url "sos_resolved_notifications_seen" %}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfHeader() },
+                            body: JSON.stringify({ ids: [id] })
+                        }).then(function() { location.reload(); }).catch(function() { location.reload(); });
+                    });
+                });
+            }
+
+            function checkResolvedNotifications() {
+                fetch('{% url "sos_resolved_notifications" %}')
+                    .then(function(r) {
+                        if (!r.ok) return r.text().then(function() { return { notifications: [] }; });
+                        return r.json();
+                    })
+                    .then(function(data) {
+                        if (data && data.notifications && data.notifications.length > 0) {
+                            renderResolvedNotifications(data.notifications);
+                        } else {
+                            container.style.display = 'none';
+                            container.innerHTML = '';
+                        }
+                    })
+                    .catch(function() {
+                        container.style.display = 'none';
+                        container.innerHTML = '';
+                    });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    checkResolvedNotifications();
+                });
+            } else {
+                checkResolvedNotifications();
+            }
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') checkResolvedNotifications();
+            });
+            // Poll so triggerer sees resolved alert without refreshing (e.g. dashboard already open)
+            setInterval(checkResolvedNotifications, 15000);
+        })();
+        </script>
+
         <!-- Status Popup (Warning/Danger) - only when not snoozed -->
         {% if profile and profile.last_check_in %}
             {% if not profile.snooze_enabled %}
@@ -382,6 +768,15 @@
 
 #check-in-btn {
     animation: pop 0.5s cubic-bezier(.4, 0, .2, 1) both, pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes sos-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+.sos-alert-card {
+    animation: sos-pulse 2s ease-in-out infinite;
+    border-color: rgba(239,68,68,0.5) !important;
 }
 </style>
 

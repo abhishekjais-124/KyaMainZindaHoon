@@ -12,7 +12,131 @@ body, html { overflow: auto !important; }
 .friend-card:active { transform: scale(0.98); }
 .friend-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
 .modal-backdrop { backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); }
+
+/* Emergency connections edit mode */
+.emergency-check-wrap { opacity: 0; width: 0; overflow: hidden; transition: opacity 0.25s ease, width 0.25s ease, margin 0.25s ease; }
+.emergency-edit-mode .emergency-check-wrap { opacity: 1; width: auto; overflow: visible; margin-right: 0.5rem; }
+.friend-avatar { transition: background-color 0.25s ease, border-color 0.25s ease; }
+.emergency-checkbox {
+  width: 1.35rem; height: 1.35rem; border-radius: 0.5rem;
+  border: 2px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.4);
+  accent-color: rgba(255,255,255,0.9); cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.emergency-checkbox:checked { border-color: rgba(255,255,255,0.7); box-shadow: 0 0 0 2px rgba(255,255,255,0.15); }
+.btn-emergency-update {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.6rem 1rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(12px); color: rgba(255,255,255,0.9);
+  font-size: 0.875rem; font-weight: 600; transition: all 0.25s ease;
+}
+.btn-emergency-update:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); }
+.btn-emergency-update.save-mode { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
+.btn-emergency-update.save-mode:hover { background: rgba(255,255,255,0.18); }
+
+/* Member-added success overlay */
+#member-added-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(16px);
+  opacity: 0; visibility: hidden; transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+#member-added-overlay.show { opacity: 1; visibility: visible; }
+#member-added-overlay .overlay-inner {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
+  transform: scale(0.7); opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+}
+#member-added-overlay.show .overlay-inner { transform: scale(1); opacity: 1; }
+.member-added-circle {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.25) 0%, rgba(16, 185, 129, 0.4) 100%);
+  border: 3px solid rgba(52, 211, 153, 0.6);
+  box-shadow: 0 0 40px rgba(52, 211, 153, 0.35), inset 0 0 30px rgba(52, 211, 153, 0.1);
+  display: flex; align-items: center; justify-content: center;
+  animation: member-added-pulse 1.2s ease-in-out infinite;
+}
+@keyframes member-added-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(52, 211, 153, 0.35), inset 0 0 30px rgba(52, 211, 153, 0.1); transform: scale(1); }
+  50% { box-shadow: 0 0 56px rgba(52, 211, 153, 0.5), inset 0 0 30px rgba(52, 211, 153, 0.15); transform: scale(1.03); }
+}
+.member-added-check {
+  width: 44px; height: 44px; stroke-dasharray: 70; stroke-dashoffset: 70;
+  animation: member-added-draw 0.6s ease-out 0.25s forwards;
+}
+@keyframes member-added-draw { to { stroke-dashoffset: 0; } }
+.member-added-title {
+  font-size: 1.35rem; font-weight: 700; color: rgba(255,255,255,0.98); letter-spacing: -0.02em;
+  opacity: 0; transform: translateY(10px);
+}
+.member-added-sub {
+  font-size: 0.9rem; color: rgba(255,255,255,0.6);
+  opacity: 0; transform: translateY(8px);
+}
+#member-added-overlay.show .member-added-title { animation: member-added-text 0.5s ease-out 0.5s forwards; }
+#member-added-overlay.show .member-added-sub { animation: member-added-text 0.5s ease-out 0.7s forwards; }
+@keyframes member-added-text { to { opacity: 1; transform: translateY(0); } }
+.member-added-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+/* SOS alert strip on friends page */
+.sos-friends-card {
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  animation: sos-friends-pulse 2s ease-in-out infinite;
+}
+@keyframes sos-friends-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+.sos-friends-card .sos-name { color: rgb(248, 113, 113); font-weight: 700; }
+.sos-friends-cta:hover { background: rgba(239, 68, 68, 0.25); border-color: rgba(248, 113, 113, 0.5); }
+.member-added-particles span {
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(52, 211, 153, 0.9); margin-left: -4px; margin-top: -4px;
+  opacity: 1; animation: member-added-burst-1 1s ease-out 0.15s forwards;
+}
+.member-added-particles span:nth-child(1) { animation-name: member-added-burst-1; }
+.member-added-particles span:nth-child(2) { animation-name: member-added-burst-2; }
+.member-added-particles span:nth-child(3) { animation-name: member-added-burst-3; }
+.member-added-particles span:nth-child(4) { animation-name: member-added-burst-4; }
+.member-added-particles span:nth-child(5) { animation-name: member-added-burst-5; }
+.member-added-particles span:nth-child(6) { animation-name: member-added-burst-6; }
+.member-added-particles span:nth-child(7) { animation-name: member-added-burst-7; }
+.member-added-particles span:nth-child(8) { animation-name: member-added-burst-8; }
+.member-added-particles span:nth-child(9) { animation-name: member-added-burst-9; }
+.member-added-particles span:nth-child(10) { animation-name: member-added-burst-10; }
+.member-added-particles span:nth-child(11) { animation-name: member-added-burst-11; }
+.member-added-particles span:nth-child(12) { animation-name: member-added-burst-12; }
+@keyframes member-added-burst-1 { to { opacity: 0; transform: translate(0, -100px) scale(0.3); } }
+@keyframes member-added-burst-2 { to { opacity: 0; transform: translate(71px, -71px) scale(0.3); } }
+@keyframes member-added-burst-3 { to { opacity: 0; transform: translate(100px, 0) scale(0.3); } }
+@keyframes member-added-burst-4 { to { opacity: 0; transform: translate(71px, 71px) scale(0.3); } }
+@keyframes member-added-burst-5 { to { opacity: 0; transform: translate(0, 100px) scale(0.3); } }
+@keyframes member-added-burst-6 { to { opacity: 0; transform: translate(-71px, 71px) scale(0.3); } }
+@keyframes member-added-burst-7 { to { opacity: 0; transform: translate(-100px, 0) scale(0.3); } }
+@keyframes member-added-burst-8 { to { opacity: 0; transform: translate(-71px, -71px) scale(0.3); } }
+@keyframes member-added-burst-9 { to { opacity: 0; transform: translate(38px, -92px) scale(0.3); } }
+@keyframes member-added-burst-10 { to { opacity: 0; transform: translate(92px, -38px) scale(0.3); } }
+@keyframes member-added-burst-11 { to { opacity: 0; transform: translate(92px, 38px) scale(0.3); } }
+@keyframes member-added-burst-12 { to { opacity: 0; transform: translate(38px, 92px) scale(0.3); } }
 </style>
+
+<!-- Member-added success overlay (hidden by default) -->
+<div id="member-added-overlay" class="fixed inset-0 z-[60] flex items-center justify-center" aria-hidden="true">
+  <div class="member-added-particles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="overlay-inner">
+    <div class="member-added-circle">
+      <svg class="member-added-check text-emerald-400" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <p class="member-added-title">Connection added!</p>
+    <p class="member-added-sub">You're now linked with this member.</p>
+  </div>
+</div>
 
 <div class="w-full min-h-screen flex flex-col items-center px-4 pt-24 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800">
   <div class="w-full max-w-sm flex flex-col gap-6">
@@ -22,6 +146,41 @@ body, html { overflow: auto !important; }
       <h1 class="text-2xl font-bold text-white/95 tracking-tight">Friends & Connections</h1>
       <p class="text-sm text-white/50 mt-1">Stay linked with people who care</p>
     </div>
+
+    <!-- Active SOS: who triggered (notified person sees this) -->
+    {% if active_sos_alerts %}
+    <div class="friends-fade-in w-full flex flex-col gap-3" style="animation-delay: 0.02s;">
+      <h2 class="text-xs font-semibold text-red-400/90 uppercase tracking-wider px-1 flex items-center gap-2">
+        <span class="inline-flex w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
+        Emergency SOS
+      </h2>
+      {% for alert in active_sos_alerts %}
+      <a href="{% url 'dashboard' %}" class="sos-friends-card block w-full rounded-2xl bg-black/50 backdrop-blur-2xl overflow-hidden border-red-500/50 shadow-xl hover:shadow-red-500/10 transition-all duration-200 group">
+        <div class="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <span class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-400/40 text-red-300">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-white/95 font-semibold">
+                <span class="sos-name">{{ alert.from_name|default:alert.from_username|default:alert.from_email|default:"Someone" }}</span>
+                triggered an emergency SOS
+              </p>
+              <p class="text-xs text-white/50 mt-0.5">{{ alert.created_at|timesince }} ago</p>
+              {% if alert.location %}
+              <p class="text-xs text-white/45 mt-1"><span class="text-white/55">Last known:</span> {{ alert.location }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <span class="sos-friends-cta flex-shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 text-sm font-semibold transition-all">
+            Resolve
+            <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Add connection card -->
     <div class="friends-fade-in w-full rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl p-4" style="animation-delay: 0.05s;">
@@ -43,32 +202,48 @@ body, html { overflow: auto !important; }
     <div class="friends-fade-in flex items-center justify-between px-4 py-2 rounded-xl bg-black/30 border border-white/5" style="animation-delay: 0.1s;">
       <span class="text-sm font-medium text-white/70 flex items-center gap-2">
         <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        {% if paired_users %}{{ paired_users|length }} connection{{ paired_users|length|pluralize }}{% else %}No connections yet{% endif %}
+        {% if connections %}{{ connections|length }} connection{{ connections|length|pluralize }}{% else %}No connections yet{% endif %}
       </span>
     </div>
 
+    <!-- Update emergency connections button (only when there are connections) -->
+    {% if connections %}
+    <div class="friends-fade-in w-full flex justify-center" style="animation-delay: 0.12s;">
+      <button type="button" id="btn-emergency-update" class="btn-emergency-update">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+        <span id="btn-emergency-label">Update emergency connections</span>
+      </button>
+    </div>
+    {% endif %}
+
     <!-- Your connections list -->
-    <div class="friends-fade-in w-full" style="animation-delay: 0.15s;">
+    <div id="connections-list-wrap" class="friends-fade-in w-full" style="animation-delay: 0.15s;">
       <h2 class="text-sm font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">Your connections</h2>
 
-      {% if paired_users %}
+      {% if connections %}
       <ul class="w-full flex flex-col gap-3">
-        {% for friend in paired_users %}
-          {% with friend_profile=friend.profile %}
+        {% for conn in connections %}
+          {% with friend=conn.user friend_profile=friend.profile is_emergency=conn.is_emergency %}
           <li class="friend-card w-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-3.5 flex items-center gap-4 shadow-lg cursor-pointer friend-item group"
-              data-name="{{ friend.get_full_name|default:friend.email|default:'Unknown' }}"
+              data-name="{{ friend.get_full_name|default:friend.username|default:friend.email|default:'Unknown' }}"
               data-email="{{ friend.email }}"
               data-status="{% if friend_profile.snooze_enabled %}Paused{% elif friend_profile.is_missing %}Danger{% elif friend_profile.is_warning %}Warning{% else %}Active{% endif %}"
               data-joined="{{ friend.date_joined|date:'d M Y, g:i A' }}"
               data-last-login="{% if friend.last_login %}{{ friend.last_login|date:'d M Y, g:i A' }}{% else %}—{% endif %}"
               data-last-checkin="{% if friend_profile.last_check_in %}{{ friend_profile.last_check_in|timesince }} ago{% else %}—{% endif %}"
               {% if friend_profile.share_location_with_friends and friend_profile.last_latitude is not None and friend_profile.last_longitude is not None %}data-lat="{{ friend_profile.last_latitude }}" data-lng="{{ friend_profile.last_longitude }}" data-location-updated="{{ friend_profile.location_updated_at|timesince }} ago"{% if friend_profile.last_city %} data-city="{{ friend_profile.last_city }}"{% endif %}{% if friend_profile.last_state %} data-state="{{ friend_profile.last_state }}"{% endif %}{% endif %}>
-            <!-- Avatar -->
-            <span class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white/90 border border-white/20 bg-white/10">
-              {% with name=friend.get_full_name|default:friend.email|default:"?" %}{{ name|slice:":1"|upper }}{% endwith %}
+            <!-- Emergency checkbox (visible only in edit mode) -->
+            <div class="emergency-check-wrap flex-shrink-0">
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="emergency-checkbox friend-emergency-cb" data-email="{{ friend.email }}" {% if is_emergency %}checked{% endif %} onclick="event.stopPropagation();" title="Emergency contact" aria-label="Mark as emergency contact" />
+              </label>
+            </div>
+            <!-- Avatar (red when emergency contact) -->
+            <span class="friend-avatar flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white/90 border {% if is_emergency %}border-red-400/50 bg-red-500/80{% else %}border-white/20 bg-white/10{% endif %}">
+              {% with name=friend.get_full_name|default:friend.username|default:friend.email|default:"?" %}{{ name|slice:":1"|upper }}{% endwith %}
             </span>
             <div class="flex-1 min-w-0">
-              <p class="font-semibold text-white/95 truncate">{{ friend.get_full_name|default:friend.email|default:"Unknown" }}</p>
+              <p class="font-semibold text-white/95 truncate">{{ friend.get_full_name|default:friend.username|default:friend.email|default:"Unknown" }}</p>
               <p class="text-xs text-white/50 truncate">{% if friend_profile.last_check_in %}{{ friend_profile.last_check_in|timesince }} ago{% else %}No check-in yet{% endif %}</p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
@@ -110,10 +285,13 @@ body, html { overflow: auto !important; }
     <button id="close-modal" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200 text-2xl font-light focus:outline-none" aria-label="Close">&times;</button>
 
     <div class="pt-10 pb-2 px-6 flex flex-col items-center w-full">
-      <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white/90 border-2 border-white/20 bg-white/10 mb-4" id="modal-avatar">?</div>
+      <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white/90 border-2 border-white/20 bg-white/10 mb-4 transition-all duration-250" id="modal-avatar">?</div>
       <h3 id="modal-name" class="text-xl font-bold text-white tracking-tight text-center"></h3>
       <p id="modal-email" class="text-sm text-white/55 truncate max-w-full mt-0.5"></p>
-      <div id="modal-status-badge" class="mt-3 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide"></div>
+      <div class="flex flex-wrap items-center justify-center gap-2 mt-3">
+        <div id="modal-status-badge" class="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide"></div>
+        <span id="modal-emergency-tag" class="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-red-500/30 text-red-200 border border-red-400/40 hidden">Emergency contact</span>
+      </div>
     </div>
 
     <div class="w-full px-6 pb-6 space-y-4">
@@ -169,24 +347,97 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusBadge = document.getElementById('modal-status-badge');
   let currentEmail = null;
 
+  // Emergency connections: Update <-> Save toggle
+  const btnEmergency = document.getElementById('btn-emergency-update');
+  const btnLabel = document.getElementById('btn-emergency-label');
+  const listWrap = document.getElementById('connections-list-wrap');
+  if (btnEmergency && listWrap) {
+    btnEmergency.addEventListener('click', function() {
+      var isEditMode = listWrap.classList.contains('emergency-edit-mode');
+      if (isEditMode) {
+        // Save: collect checked emails and POST
+        var checkboxes = listWrap.querySelectorAll('.friend-emergency-cb:checked');
+        var emergencyEmails = Array.from(checkboxes).map(function(cb) { return cb.getAttribute('data-email'); });
+        var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch('{% url "friends_save_emergency" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ emergency_emails: emergencyEmails })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            listWrap.classList.remove('emergency-edit-mode');
+            btnEmergency.classList.remove('save-mode');
+            btnLabel.textContent = 'Update emergency connections';
+            // Update badges without full reload: show Emergency only where checked
+            listWrap.querySelectorAll('.friend-item').forEach(function(li) {
+              var email = li.getAttribute('data-email');
+              var avatar = li.querySelector('.friend-avatar');
+              var cb = li.querySelector('.friend-emergency-cb');
+              var isEmergency = emergencyEmails.indexOf(email) !== -1;
+              if (cb) cb.checked = isEmergency;
+              if (avatar) {
+                avatar.classList.remove('border-red-400/50', 'bg-red-500/80', 'border-white/20', 'bg-white/10');
+                if (isEmergency) {
+                  avatar.classList.add('border-red-400/50', 'bg-red-500/80');
+                } else {
+                  avatar.classList.add('border-white/20', 'bg-white/10');
+                }
+              }
+            });
+            if (typeof showMessagePopup === 'function') showMessagePopup(true, data.message);
+          } else {
+            if (typeof showMessagePopup === 'function') showMessagePopup(false, data.message || 'Could not save.');
+          }
+        })
+        .catch(function() {
+          if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Could not save. Try again.');
+        });
+      } else {
+        listWrap.classList.add('emergency-edit-mode');
+        btnEmergency.classList.add('save-mode');
+        btnLabel.textContent = 'Save';
+      }
+    });
+  }
+
+  const modalEmergencyTag = document.getElementById('modal-emergency-tag');
   document.querySelectorAll('.friend-item').forEach(function(item) {
     item.addEventListener('click', function(e) {
       var name = item.getAttribute('data-name');
       var email = item.getAttribute('data-email');
       var status = item.getAttribute('data-status');
+      var isEmergency = item.querySelector('.friend-emergency-cb') && item.querySelector('.friend-emergency-cb').checked;
       nameEl.textContent = name;
       emailEl.textContent = email;
       avatarEl.textContent = (name || '?').charAt(0).toUpperCase();
+      avatarEl.className = 'w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white/90 border-2 mb-4 transition-all duration-250 ';
+      if (isEmergency) {
+        avatarEl.classList.add('border-red-400/50', 'bg-red-500/80');
+      } else {
+        avatarEl.classList.add('border-white/20', 'bg-white/10');
+      }
       joinedEl.textContent = item.getAttribute('data-joined');
       lastLoginEl.textContent = item.getAttribute('data-last-login');
       lastCheckinEl.textContent = item.getAttribute('data-last-checkin') || '—';
       currentEmail = email;
       statusBadge.textContent = status;
-      statusBadge.className = 'mt-3 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide ';
+      statusBadge.className = 'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide ';
       if (status === 'Paused') statusBadge.className += 'bg-gray-500/25 text-gray-300';
       else if (status === 'Active') statusBadge.className += 'bg-green-500/25 text-green-300';
       else if (status === 'Warning') statusBadge.className += 'bg-amber-500/25 text-amber-300';
       else statusBadge.className += 'bg-red-500/25 text-red-300';
+      if (modalEmergencyTag) {
+        if (isEmergency) {
+          modalEmergencyTag.classList.remove('hidden');
+        } else {
+          modalEmergencyTag.classList.add('hidden');
+        }
+      }
 
       var lat = item.getAttribute('data-lat');
       var lng = item.getAttribute('data-lng');
@@ -251,7 +502,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 document.getElementById('invite-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  var formData = new FormData(this);
+  var form = this;
+  var formData = new FormData(form);
   var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   fetch(window.location.href, {
     method: 'POST',
@@ -260,12 +512,41 @@ document.getElementById('invite-form').addEventListener('submit', function(e) {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    showMessagePopup(data.success, data.message);
-    if (data.success) setTimeout(function() { window.location.reload(); }, 2000);
+    if (data.success) {
+      var overlay = document.getElementById('member-added-overlay');
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      setTimeout(function() {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+        showMessagePopup(true, data.message);
+        setTimeout(function() { window.location.reload(); }, 1200);
+      }, 2500);
+    } else {
+      showMessagePopup(false, data.message);
+    }
   })
   .catch(function() {
     showMessagePopup(false, 'An error occurred. Please try again.');
   });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('member_added') === '1') {
+    var overlay = document.getElementById('member-added-overlay');
+    if (overlay) {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(function() {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+      }, 2500);
+    }
+  }
 });
 </script>
 {% endblock %}

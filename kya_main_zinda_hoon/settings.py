@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -54,11 +55,15 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# Username + password auth (and optional email); also supports Google via socialaccount
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 LOGIN_REDIRECT_URL = '/KyaMainZindaHoon/dashboard/'
 LOGIN_URL = '/KyaMainZindaHoon/accounts/login/'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
+ACCOUNT_SIGNUP_REDIRECT_URL = LOGIN_REDIRECT_URL
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -94,13 +99,25 @@ WSGI_APPLICATION = 'kya_main_zinda_hoon.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Use DATABASE_PATH env for a persistent path on the server so data (sessions,
+# profiles, connections) survives deploys. Example: DATABASE_PATH=/data/db.sqlite3
+_db_path = os.environ.get('DATABASE_PATH')
+if _db_path:
+    _db_path = Path(_db_path)
+    _db_path.parent.mkdir(parents=True, exist_ok=True)
+    _sqlite_name = _db_path
+else:
+    _sqlite_name = BASE_DIR / 'db.sqlite3'
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': _sqlite_name,
     }
 }
+
+# Sessions in the same SQLite DB so logins persist across server restarts/deploys
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 
 # Password validation
