@@ -87,6 +87,19 @@ body, html { overflow: hidden !important; }
         </label>
         <input type="checkbox" id="share-location-switch" class="settings-switch" {% if profile.share_location_with_friends %}checked{% endif %} data-csrf="{{ csrf_token }}">
       </div>
+      <!-- Share location in SOS -->
+      <div class="flex items-center justify-between gap-4 px-4 py-4 bg-black/20">
+        <label for="share-location-in-sos-switch" class="flex-1 cursor-pointer min-w-0 flex items-start gap-3">
+          <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-red-500/15 border border-red-400/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-red-400/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </span>
+          <span class="min-w-0">
+            <p class="text-sm font-semibold text-white/95 leading-snug">Share location when in SOS</p>
+            <p class="text-xs text-white/45 mt-0.5">Emergency contacts can see your location on the map when you trigger SOS</p>
+          </span>
+        </label>
+        <input type="checkbox" id="share-location-in-sos-switch" class="settings-switch" {% if profile.share_location_in_sos %}checked{% endif %} data-csrf="{{ csrf_token }}">
+      </div>
       <!-- Snooze -->
       <div class="flex items-center justify-between gap-4 px-4 py-4 bg-black/20">
         <label for="snooze-switch" class="flex-1 cursor-pointer min-w-0 flex items-start gap-3">
@@ -158,6 +171,23 @@ body, html { overflow: hidden !important; }
     })
     .catch(function() { switchEl.checked = !enabled; });
   }
+  function saveShareLocationInSos(enabled) {
+    fetch('{% url "settings" %}', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken(),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ share_location_in_sos: enabled })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) shareLocationInSosSwitch.checked = !shareLocationInSosSwitch.checked;
+    })
+    .catch(function() { shareLocationInSosSwitch.checked = !shareLocationInSosSwitch.checked; });
+  }
   var switchEl = document.getElementById('share-location-switch');
   switchEl.addEventListener('change', function() {
     var enabled = switchEl.checked;
@@ -179,6 +209,29 @@ body, html { overflow: hidden !important; }
       saveLocationPreference(false);
     }
   });
+  var shareLocationInSosSwitch = document.getElementById('share-location-in-sos-switch');
+  if (shareLocationInSosSwitch) {
+    shareLocationInSosSwitch.addEventListener('change', function() {
+      var enabled = shareLocationInSosSwitch.checked;
+      if (enabled) {
+        if (!navigator.geolocation) {
+          shareLocationInSosSwitch.checked = false;
+          if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Location is not supported on this device.');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function() { saveShareLocationInSos(true); },
+          function() {
+            shareLocationInSosSwitch.checked = false;
+            if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Location permission is needed to share your location with emergency contacts during SOS.');
+          },
+          { timeout: 15000, maximumAge: 0 }
+        );
+      } else {
+        saveShareLocationInSos(false);
+      }
+    });
+  }
   var snoozeSwitch = document.getElementById('snooze-switch');
   var snoozePopup = document.getElementById('snooze-confirm-popup');
   var snoozeCancel = document.getElementById('snooze-confirm-cancel');

@@ -20,6 +20,7 @@ class Profile(models.Model):
     alert_sent = models.BooleanField(default=False)
     invite_code = models.CharField(max_length=5, unique=True, null=False, blank=False, editable=False)
     share_location_with_friends = models.BooleanField(default=False)
+    share_location_in_sos = models.BooleanField(default=False)
     snooze_enabled = models.BooleanField(default=False)
     last_latitude = models.FloatField(null=True, blank=True)
     last_longitude = models.FloatField(null=True, blank=True)

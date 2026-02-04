@@ -113,17 +113,21 @@ def friends_view(request):
         return ', '.join(parts) if parts else None
 
     active_sos = SOSAlert.objects.filter(to_user=profile, status=SOSAlert.Status.ACTIVE).select_related('from_user', 'from_user__user')
-    active_sos_alerts = [
-        {
+    active_sos_alerts = []
+    for a in active_sos:
+        from_profile = a.from_user
+        item = {
             'id': a.id,
-            'from_name': _display_name(a.from_user.user),
-            'from_username': a.from_user.user.username,
-            'from_email': a.from_user.user.email,
+            'from_name': _display_name(from_profile.user),
+            'from_username': from_profile.user.username,
+            'from_email': from_profile.user.email,
             'created_at': a.created_at,
-            'location': _location_str(a.from_user),
+            'location': _location_str(from_profile),
         }
-        for a in active_sos
-    ]
+        if from_profile.share_location_in_sos and from_profile.last_latitude is not None and from_profile.last_longitude is not None:
+            item['lat'] = from_profile.last_latitude
+            item['lng'] = from_profile.last_longitude
+        active_sos_alerts.append(item)
 
     return render(request, 'core/friends.html', {
         'connections': connections,
@@ -214,18 +218,23 @@ def settings_view(request):
                 data = json.loads(request.body)
                 if 'share_location_with_friends' in data:
                     profile.share_location_with_friends = bool(data['share_location_with_friends'])
+                if 'share_location_in_sos' in data:
+                    profile.share_location_in_sos = bool(data['share_location_in_sos'])
                 if 'snooze_enabled' in data:
                     profile.snooze_enabled = bool(data['snooze_enabled'])
                 profile.save()
                 return JsonResponse({
                     'success': True,
                     'share_location_with_friends': profile.share_location_with_friends,
+                    'share_location_in_sos': profile.share_location_in_sos,
                     'snooze_enabled': profile.snooze_enabled,
                 })
             except Exception:
                 return JsonResponse({'success': False}, status=400)
         if 'share_location_with_friends' in request.POST:
             profile.share_location_with_friends = request.POST.get('share_location_with_friends') == 'on'
+        if 'share_location_in_sos' in request.POST:
+            profile.share_location_in_sos = request.POST.get('share_location_in_sos') == 'on'
         if 'snooze_enabled' in request.POST:
             profile.snooze_enabled = request.POST.get('snooze_enabled') == 'on'
         profile.save()
@@ -340,7 +349,9 @@ def check_in(request):
 @login_required
 @require_POST
 def sos_trigger(request):
-    """Create active SOS alerts only to emergency contacts. Called after 10s countdown (no cancel)."""
+    """Create active SOS alerts only to emergency contacts. Called after 10s countdown (no cancel).
+    Optional JSON body: { "lat": <float>, "lng": <float> }. If provided, store location and
+    enable share_location_in_sos if it was off (user granted location from SOS button)."""
     profile = request.user.profile
     if SOSAlert.objects.filter(from_user=profile, status=SOSAlert.Status.ACTIVE).exists():
         return JsonResponse({
@@ -355,6 +366,26 @@ def sos_trigger(request):
             'success': False,
             'message': 'No emergency contacts. Choose them on the Friends page and save.',
         }, status=400)
+    # Optional location: if sent with SOS, store it and enable share_location_in_sos if not already
+    try:
+        data = __import__('json').loads(request.body) if request.body else {}
+        lat, lng = data.get('lat'), data.get('lng')
+    except Exception:
+        lat, lng = None, None
+    if lat is not None and lng is not None:
+        try:
+            profile.last_latitude = float(lat)
+            profile.last_longitude = float(lng)
+            profile.location_updated_at = timezone.now()
+            from .utils import reverse_geocode
+            city, state = reverse_geocode(profile.last_latitude, profile.last_longitude)
+            profile.last_city = city
+            profile.last_state = state
+            if not profile.share_location_in_sos:
+                profile.share_location_in_sos = True
+        except (TypeError, ValueError):
+            pass
+    profile.save()
     for mapping in emergency_mappings:
         SOSAlert.objects.create(from_user=profile, to_user=mapping.partner, status=SOSAlert.Status.ACTIVE)
     return JsonResponse({'success': True, 'message': 'SOS sent to your emergency contacts.'})
@@ -391,18 +422,22 @@ def sos_list(request):
         name = (u.get_full_name() or '').strip()
         return name or u.username or u.email or 'Someone'
 
-    data = [
-        {
+    data = []
+    for a in alerts:
+        from_profile = a.from_user
+        item = {
             'id': a.id,
-            'from_name': _display_name(a.from_user.user),
-            'from_username': a.from_user.user.username,
-            'from_email': a.from_user.user.email,
+            'from_name': _display_name(from_profile.user),
+            'from_username': from_profile.user.username,
+            'from_email': from_profile.user.email,
             'created_at': a.created_at.isoformat(),
-            'location': _location_str(a.from_user),
-            'location_updated_at': a.from_user.location_updated_at.isoformat() if a.from_user.location_updated_at else None,
+            'location': _location_str(from_profile),
+            'location_updated_at': from_profile.location_updated_at.isoformat() if from_profile.location_updated_at else None,
         }
-        for a in alerts
-    ]
+        if from_profile.share_location_in_sos and from_profile.last_latitude is not None and from_profile.last_longitude is not None:
+            item['lat'] = from_profile.last_latitude
+            item['lng'] = from_profile.last_longitude
+        data.append(item)
     return JsonResponse({'alerts': data})
 
 

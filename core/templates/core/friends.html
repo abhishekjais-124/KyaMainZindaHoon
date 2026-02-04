@@ -155,7 +155,7 @@ body, html { overflow: auto !important; }
         Emergency SOS
       </h2>
       {% for alert in active_sos_alerts %}
-      <a href="{% url 'dashboard' %}" class="sos-friends-card block w-full rounded-2xl bg-black/50 backdrop-blur-2xl overflow-hidden border-red-500/50 shadow-xl hover:shadow-red-500/10 transition-all duration-200 group">
+      <div class="sos-friends-card w-full rounded-2xl bg-black/50 backdrop-blur-2xl overflow-hidden border-red-500/50 shadow-xl transition-all duration-200">
         <div class="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <span class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-500/20 border-2 border-red-400/40 text-red-300">
@@ -172,12 +172,24 @@ body, html { overflow: auto !important; }
               {% endif %}
             </div>
           </div>
-          <span class="sos-friends-cta flex-shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 text-sm font-semibold transition-all">
-            Resolve
-            <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-          </span>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            {% if 'lat' in alert and 'lng' in alert %}
+            <a href="https://www.google.com/maps?q={{ alert.lat|stringformat:"f" }},{{ alert.lng|stringformat:"f" }}" target="_blank" rel="noopener noreferrer" class="sos-friends-cta inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all">
+              Locate
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </a>
+            {% else %}
+            <span class="sos-friends-cta inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white/60 text-sm font-medium cursor-default" title="Location was not shared">
+              Locate
+            </span>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="sos-friends-cta inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-400/30 bg-red-500/15 text-red-300 text-sm font-semibold hover:bg-red-500/25 transition-all group">
+              Resolve
+              <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </a>
+          </div>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
     {% endif %}

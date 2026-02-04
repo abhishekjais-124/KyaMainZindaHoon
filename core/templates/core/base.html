@@ -1,10 +1,10 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark{% if emergency_sos_active %} emergency-mode{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-    <meta name="theme-color" content="#18181b">
+    <meta name="theme-color" content="{% if emergency_sos_active %}#7f1d1d{% else %}#18181b{% endif %}">
     <!-- Fullscreen when launched from home screen (iOS) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,6 +15,11 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="/static/icons/icon-512x512.png">
     <link rel="stylesheet" href="/static/css/pwa_fullscreen.css">
+    {% if emergency_sos_active %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    {% endif %}
     <title>{% block title %}Am I Ok?{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,7 +34,58 @@
 {% block extra_head %}{% endblock %}
 {% block dashboard_noscroll %}{% endblock %}
 </head>
-<body class="bg-gradient-to-br from-black via-gray-900 to-gray-800 min-h-screen text-white" id="body-root">
+<body class="min-h-screen text-white transition-[background-image] duration-500 {% if emergency_sos_active %}emergency-body{% else %}bg-gradient-to-br from-black via-gray-900 to-gray-800{% endif %}" id="body-root">
+    {% if emergency_sos_active %}
+    <!-- Emergency SOS active: small pill top-right -->
+    <div id="emergency-sos-banner" class="emergency-banner fixed top-3 right-3 z-[100] flex items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 shadow-lg" style="background: linear-gradient(145deg, rgba(127,29,29,0.92) 0%, rgba(153,27,27,0.9) 100%); backdrop-filter: blur(12px); box-shadow: 0 0 0 1px rgba(251,207,232,0.15), 0 4px 16px rgba(0,0,0,0.35), 0 0 24px rgba(220,38,38,0.12); font-family: 'Outfit', system-ui, sans-serif;">
+        <span class="emergency-live-dot flex h-2 w-2 flex-shrink-0 rounded-full bg-rose-300"></span>
+        <span class="text-xs font-semibold tracking-tight text-white/95" style="text-shadow: 0 1px 1px rgba(0,0,0,0.25);">SOS active</span>
+    </div>
+    <div class="emergency-body-overlay fixed inset-0 pointer-events-none z-0" aria-hidden="true"></div>
+    <style>
+        .emergency-body {
+            background: linear-gradient(172deg, #0a0808 0%, #141212 22%, #1a1515 45%, #161212 70%, #0d0909 100%);
+            background-attachment: fixed;
+        }
+        .emergency-body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 100% 60% at 50% -10%, rgba(190,24,93,0.12) 0%, transparent 55%),
+                radial-gradient(ellipse 80% 40% at 80% 50%, rgba(185,28,28,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 50% at 20% 80%, rgba(127,29,29,0.05) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .emergency-body-overlay {
+            background: linear-gradient(180deg, rgba(127,29,29,0.04) 0%, transparent 22%, transparent 78%, rgba(127,29,29,0.03) 100%);
+        }
+        .emergency-live-dot {
+            animation: emergency-live-breathe 2s ease-in-out infinite;
+        }
+        @keyframes emergency-live-breathe {
+            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(253,164,175,0.4); }
+            50% { opacity: 0.9; transform: scale(1.15); box-shadow: 0 0 6px 1px rgba(253,164,175,0.5); }
+        }
+        .emergency-mode .mobile-bottom-nav {
+            border-top-color: rgba(251,207,232,0.2) !important;
+            background: rgba(30,18,22,0.6) !important;
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.35), 0 -1px 0 rgba(251,207,232,0.08) !important;
+        }
+        .emergency-mode .mobile-bottom-nav__icon {
+            background: rgba(251,207,232,0.08) !important;
+        }
+        .emergency-mode .mobile-bottom-nav__item:hover .mobile-bottom-nav__icon {
+            background: rgba(251,207,232,0.18) !important;
+        }
+        .emergency-mode #body-root > .container { position: relative; z-index: 1; }
+        .emergency-mode .emergency-body-overlay { z-index: 0; }
+        .emergency-mode .rounded-2xl.border, .emergency-mode .rounded-3xl.border { border-color: rgba(251,207,232,0.14) !important; }
+        .emergency-mode .backdrop-blur-2xl.border { border-color: rgba(251,207,232,0.1) !important; }
+        .emergency-mode #sos-dashboard-notifications { top: 1rem; }
+    </style>
+    {% endif %}
         {% include 'core/partials/loader.html' %}
         <div class="container mx-auto px-2 py-8 flex flex-col items-center justify-center min-h-screen">
                 {% block content %}{% endblock %}
