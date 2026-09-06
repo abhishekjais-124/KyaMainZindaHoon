@@ -163,16 +163,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'core' / 'static',
-    BASE_DIR / 'dark' / 'static',
-]
 
-# WhiteNoise settings
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Keep the direct /static/... URLs used by the app and let WhiteNoise find
+# app-owned files even if a Render instance starts without collected output.
+# Django discovers each installed app's static/ directory automatically.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
+WHITENOISE_USE_FINDERS = True
 
 # Subdirectory mount behind a reverse proxy (e.g. aj124.com/zinda/).
-# Do NOT tie this to DEBUG — Render (kmzh.onrender.com) serves at root.
+# Do NOT tie this to DEBUG — the Render service serves at the domain root.
 # Example: FORCE_SCRIPT_NAME=/zinda
 _force_script = os.environ.get('FORCE_SCRIPT_NAME', '').strip().rstrip('/')
 FORCE_SCRIPT_NAME = f'{_force_script}/' if _force_script else None
@@ -183,7 +189,7 @@ TAILWIND_APP_NAME = 'dark'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-ALLOWED_HOSTS = ["aj124.com", "www.aj124.com", "localhost", "127.0.0.1", ".onrender.com", "kmzh.onrender.com"]
+ALLOWED_HOSTS = ["aj124.com", "www.aj124.com", "localhost", "127.0.0.1", ".onrender.com", "kyamainzindahoon.onrender.com"]
 
 # django-allauth: skip provider confirmation and auto-continue
 SOCIALACCOUNT_AUTO_SIGNUP = True
@@ -192,7 +198,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 CSRF_TRUSTED_ORIGINS = [
     "https://aj124.com",
     "https://www.aj124.com",
-    "https://kmzh.onrender.com",
+    "https://kyamainzindahoon.onrender.com",
     "https://*.onrender.com",
 ]
 
