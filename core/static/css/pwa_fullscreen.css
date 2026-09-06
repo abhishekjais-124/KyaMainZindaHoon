@@ -1,8 +1,13 @@
 /* Fullscreen PWA: use safe areas for notch/home indicator (iOS & Android) */
-html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+html, body { width:100%; min-height:100%; margin:0; padding:0; overflow:hidden; }
+html {
+  min-height: 100vh;
+  min-height: 100lvh;
+  background: #080c12;
+}
 body {
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100lvh;
   min-width: 100vw;
   background: #080c12;
   /* Only top/side safe areas here. Bottom is handled by the floating nav
