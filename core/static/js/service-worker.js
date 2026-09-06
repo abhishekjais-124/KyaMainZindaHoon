@@ -1,9 +1,9 @@
-const CACHE_NAME = 'kmzh-cache-v10';
+const CACHE_NAME = 'kmzh-cache-v13';
 const urlsToCache = [
   '/KyaMainZindaHoon/',
-  '/KyaMainZindaHoon/static/css/pwa_fullscreen.css?v=20260907-3',
-  '/KyaMainZindaHoon/static/css/mobile_bottom_nav.css?v=20260907-3',
-  '/KyaMainZindaHoon/static/css/premium.css?v=20260907-3'
+  '/KyaMainZindaHoon/static/css/pwa_fullscreen.css?v=20260907-6',
+  '/KyaMainZindaHoon/static/css/mobile_bottom_nav.css?v=20260907-6',
+  '/KyaMainZindaHoon/static/css/premium.css?v=20260907-6'
 ];
 
 self.addEventListener('install', event => {

@@ -374,7 +374,7 @@ input:focus-visible {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   left: 0 !important;
   right: 0 !important;
-  bottom: 6px !important;
+  bottom: 5px !important;
   width: min(calc(100% - 32px), 460px) !important;
   max-width: none;
   min-height: 68px;
@@ -930,7 +930,9 @@ input:focus-visible {
 html body.app-body:has(.friends-page),
 html body.app-body:has(.profile-page) {
   overflow: hidden !important;
-  height: 100% !important;
+  height: 100vh !important;
+  height: 100lvh !important;
+  min-height: 0 !important;
   overscroll-behavior: none;
 }
 
