@@ -211,12 +211,19 @@
         background: rgba(248, 113, 113, 0.06);
     }
     .auth-form-panel {
+        display: grid;
         width: 100%;
         text-align: left;
     }
+    .auth-form-panel-inner {
+        grid-area: 1 / 1;
+        width: 100%;
+    }
     .auth-form-panel[data-active="signup"] .auth-form-login,
     .auth-form-panel[data-active="login"] .auth-form-signup {
-        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
     }
     .auth-submit {
         width: 100%;
@@ -512,14 +519,25 @@
     var panel = document.querySelector('.auth-form-panel');
     var tabs = document.querySelectorAll('.auth-tab');
     if (!panel || !tabs.length) return;
+
+    function setActiveTab(activeTab) {
+        panel.setAttribute('data-active', activeTab);
+        tabs.forEach(function(btn) {
+            var isActive = btn.getAttribute('data-tab') === activeTab;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        panel.querySelectorAll('.auth-form-panel-inner').forEach(function(formPanel) {
+            var isActive = formPanel.classList.contains('auth-form-' + activeTab);
+            formPanel.inert = !isActive;
+            formPanel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+        });
+    }
+
+    setActiveTab(panel.getAttribute('data-active') || 'login');
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function() {
-            var t = this.getAttribute('data-tab');
-            panel.setAttribute('data-active', t);
-            tabs.forEach(function(btn) {
-                btn.classList.toggle('active', btn === tab);
-                btn.setAttribute('aria-selected', btn === tab ? 'true' : 'false');
-            });
+            setActiveTab(this.getAttribute('data-tab'));
         });
     });
 })();

@@ -15,6 +15,13 @@
 </style>
 {% block content %}
 {% include 'core/app_icon.html' %}
+<button type="button" id="home-info-trigger" class="home-info-trigger" aria-label="Learn how to use the app" aria-haspopup="dialog" aria-controls="home-info-modal" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M12 10.75v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <circle cx="12" cy="7.8" r="1" fill="currentColor"/>
+    </svg>
+</button>
 <div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800">
     <div class="dashboard-stack flex flex-col items-center w-full">
         <div class="dashboard-header w-full flex flex-col items-center gap-2">
@@ -25,6 +32,7 @@
             <p class="text-sm sm:text-base text-white/50 font-medium text-center max-w-xs">Let your trusted circle know you’re okay</p>
         </div>
         <div class="dashboard-checkin relative flex flex-col items-center justify-center w-full">
+            <div class="dashboard-loader-wrap">
             <button id="loader-btn" aria-label="Press and hold to check in" data-last-check-in="{{ profile.last_check_in|date:'c' }}" class="dashboard-loader-btn relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 active:scale-95 group overflow-hidden"
                 style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
                 <!-- Animated SVG Ring -->
@@ -79,6 +87,10 @@
                 }
                 </style>
             </button>
+                <div id="checkin-guidance" class="checkin-guidance" role="status" aria-live="polite" aria-hidden="true">
+                    Tap and hold to check in
+                </div>
+            </div>
             <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
             <p class="dashboard-hint text-xs sm:text-sm text-center">Press and hold to check in</p>
             <!-- SOS Emergency button (red + disabled when active SOS; gray + disabled when no contacts; else enabled) -->
@@ -162,6 +174,98 @@
     </div>
 </div>
 
+<!-- Premium app guide -->
+<div id="home-info-modal" class="home-info-modal" role="dialog" aria-modal="true" aria-labelledby="home-info-title" aria-describedby="home-info-description" aria-hidden="true">
+    <section class="home-info-card">
+        <header class="home-info-header">
+            <div class="home-info-heading">
+                <span class="home-info-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 10.75v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                        <circle cx="12" cy="7.8" r="1" fill="currentColor"/>
+                    </svg>
+                </span>
+                <div>
+                    <p class="home-info-eyebrow">Quick guide</p>
+                    <h2 id="home-info-title">How Am I Ok? works</h2>
+                    <p id="home-info-description">Everything you need in 10 simple steps.</p>
+                </div>
+            </div>
+            <button type="button" id="home-info-close" class="home-info-close" aria-label="Close guide">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </header>
+        <ol class="home-info-list">
+            <li><span>1</span><p>Press and hold the big circle to check in.</p></li>
+            <li><span>2</span><p>The timer shows how long you have before Danger.</p></li>
+            <li><span>3</span><p>Tap Invite to add someone you trust.</p></li>
+            <li><span>4</span><p>Open Circle to see and manage your people.</p></li>
+            <li><span>5</span><p>Set a time limit for each relationship.</p></li>
+            <li><span>6</span><p>Choose emergency contacts for SOS alerts.</p></li>
+            <li><span>7</span><p>Use SOS only when you need urgent help.</p></li>
+            <li><span>8</span><p>Turn on location sharing in Profile if you want.</p></li>
+            <li><span>9</span><p>Use Snooze when you need a break from check-ins.</p></li>
+            <li><span>10</span><p>Only people you approve can see your status.</p></li>
+        </ol>
+        <footer class="home-info-footer">
+            <span aria-hidden="true"></span>
+            Stay connected. Stay safe.
+        </footer>
+    </section>
+</div>
+<script>
+(function() {
+    var trigger = document.getElementById('home-info-trigger');
+    var modal = document.getElementById('home-info-modal');
+    var closeButton = document.getElementById('home-info-close');
+    if (!trigger || !modal || !closeButton) return;
+
+    function setBackgroundInert(isInert) {
+        document.querySelectorAll('.dashboard-main, .mobile-bottom-nav, .app-brand-icon').forEach(function(element) {
+            element.inert = isInert;
+        });
+        trigger.inert = isInert;
+    }
+
+    function openGuide() {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        trigger.setAttribute('aria-expanded', 'true');
+        setBackgroundInert(true);
+        requestAnimationFrame(function() {
+            closeButton.focus();
+        });
+    }
+
+    function closeGuide() {
+        setBackgroundInert(false);
+        trigger.focus();
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', openGuide);
+    closeButton.addEventListener('click', closeGuide);
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) closeGuide();
+    });
+    document.addEventListener('keydown', function(event) {
+        if (!modal.classList.contains('is-open')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeGuide();
+        } else if (event.key === 'Tab') {
+            event.preventDefault();
+            closeButton.focus();
+        }
+    });
+})();
+</script>
+
 <!-- SOS 10-second countdown modal (sender) -->
 <div id="sos-countdown-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sos-countdown-title">
     <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-8 py-8 flex flex-col items-center gap-6 max-w-sm w-full animate-pop">
@@ -206,6 +310,7 @@
         const dangerCountdownUnits = document.getElementById('danger-countdown-units');
         const statusDot = document.getElementById('status-dot');
         const statusSpan = document.getElementById('status-text');
+        const checkinGuidance = document.getElementById('checkin-guidance');
         const statusIsPaused = {{ profile.snooze_enabled|yesno:"true,false" }};
         const dangerWindowMs = {{ danger_hours }} * 60 * 60 * 1000;
         const warningWindowMs = {{ warning_hours|stringformat:"g" }} * 60 * 60 * 1000;
@@ -217,6 +322,51 @@
         let animating = false;
         let countdownPaused = false;
         let successTimer = null;
+        let guidanceTimer = null;
+        let guidanceHasShown = false;
+
+        function hideCheckinGuidance() {
+            if (guidanceTimer) {
+                clearTimeout(guidanceTimer);
+                guidanceTimer = null;
+            }
+            loaderBtn.classList.remove('is-guided');
+            if (checkinGuidance) {
+                checkinGuidance.classList.remove('is-visible');
+                checkinGuidance.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function showCheckinGuidance() {
+            guidanceTimer = null;
+            if (guidanceHasShown || document.hidden || animating) return;
+            guidanceHasShown = true;
+            loaderBtn.classList.add('is-guided');
+            if (checkinGuidance) {
+                checkinGuidance.classList.add('is-visible');
+                checkinGuidance.setAttribute('aria-hidden', 'false');
+            }
+        }
+
+        function scheduleCheckinGuidance() {
+            if (guidanceHasShown) return;
+            if (guidanceTimer) clearTimeout(guidanceTimer);
+            guidanceTimer = setTimeout(showCheckinGuidance, 10000);
+        }
+
+        function noteUserActivity() {
+            if (guidanceHasShown) {
+                hideCheckinGuidance();
+            } else {
+                scheduleCheckinGuidance();
+            }
+        }
+
+        function playSuccessHaptic() {
+            if (!navigator.vibrate) return;
+            navigator.vibrate(0);
+            navigator.vibrate([30, 40, 55, 45, 90]);
+        }
 
         function setRingProgress(fraction) {
             const progress = Math.max(0, Math.min(1, fraction));
@@ -363,14 +513,12 @@
                     if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
                     // Confirm 100% attendance marked
                     if (typeof showMessagePopup === 'function') showMessagePopup(true, (lat != null && lng != null) ? 'Checked in · Location shared' : 'Attendance marked · 100%');
-                    // Play sound, then vibrate after sound ends
+                    // Pair the success sound with a short rising confirmation haptic.
+                    playSuccessHaptic();
                     loaderSound.currentTime = 0;
-                    const vibrateAfterSound = function() {
-                        if (navigator.vibrate) navigator.vibrate(200);
-                        loaderSound.removeEventListener('ended', vibrateAfterSound);
-                    };
-                    loaderSound.addEventListener('ended', vibrateAfterSound);
-                    loaderSound.play();
+                    loaderSound.play().catch(function() {
+                        // Haptic confirmation still works when autoplay blocks sound.
+                    });
                 })
                 .catch(function() {
                     lastCheckInMs = previousCheckInMs;
@@ -435,6 +583,7 @@
         function startHold(event) {
             if (event && event.button !== 0) return;
             if (animating) return;
+            hideCheckinGuidance();
             if (successTimer) {
                 clearTimeout(successTimer);
                 successTimer = null;
@@ -463,7 +612,18 @@
         loaderBtn.addEventListener('pointerup', endHold);
         loaderBtn.addEventListener('pointerleave', endHold);
         loaderBtn.addEventListener('pointercancel', endHold);
+        document.addEventListener('pointerdown', noteUserActivity, { passive: true });
+        document.addEventListener('keydown', noteUserActivity);
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (guidanceTimer) clearTimeout(guidanceTimer);
+                guidanceTimer = null;
+            } else {
+                scheduleCheckinGuidance();
+            }
+        });
         showDangerCountdown();
+        scheduleCheckinGuidance();
         setInterval(updateDangerCountdown, 1000);
         </script>
 
