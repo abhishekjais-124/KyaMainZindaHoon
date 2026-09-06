@@ -1,16 +1,15 @@
-const CACHE_NAME = 'kmzh-cache-v8';
+const CACHE_NAME = 'kmzh-cache-v7';
 const urlsToCache = [
-  '/',
-  '/static/css/pwa_fullscreen.css?v=8',
-  '/static/css/mobile_bottom_nav.css?v=8',
-  '/static/css/premium.css?v=8'
+  '/KyaMainZindaHoon/',
+  '/KyaMainZindaHoon/static/css/pwa_fullscreen.css',
+  '/KyaMainZindaHoon/static/css/mobile_bottom_nav.css',
+  '/KyaMainZindaHoon/static/css/premium.css'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -34,24 +33,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match(event.request).then(response => response || caches.match('/')))
-    );
-    return;
-  }
-
-  // Prefer the network for deployable assets so an installed PWA cannot keep
-  // an old stylesheet indefinitely after a new Render deployment.
-  if (new URL(event.request.url).pathname.startsWith('/static/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(networkResponse => {
-          if (event.request.method === 'GET' && networkResponse.ok) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(response => response || caches.match('/KyaMainZindaHoon/')))
     );
     return;
   }
