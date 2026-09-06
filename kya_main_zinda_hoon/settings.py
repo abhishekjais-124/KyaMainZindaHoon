@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,13 +22,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-318f2q(!!kj7*&io#gqz@hx2emtji@r$8q-=#7n6d7x97vkasu'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to False so production stays safe if the env var is unset.
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret!
+# Required in production; a local-only insecure fallback is used when DEBUG=True.
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-not-for-production'
+    else:
+        raise ImproperlyConfigured(
+            'Set the SECRET_KEY environment variable when DEBUG is False.'
+        )
 
 
 # Application definition
@@ -60,8 +69,9 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-LOGIN_REDIRECT_URL = '/KyaMainZindaHoon/dashboard/'
-LOGIN_URL = '/KyaMainZindaHoon/accounts/login/'
+# Named URLs so reverse() applies FORCE_SCRIPT_NAME when set.
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = 'account_login'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
 ACCOUNT_SIGNUP_REDIRECT_URL = LOGIN_REDIRECT_URL
 
@@ -166,7 +176,11 @@ STATICFILES_DIRS = [
 # WhiteNoise settings
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-FORCE_SCRIPT_NAME = '/zinda/' if not DEBUG else None
+# Subdirectory mount behind a reverse proxy (e.g. aj124.com/zinda/).
+# Do NOT tie this to DEBUG — Render (kmzh.onrender.com) serves at root.
+# Example: FORCE_SCRIPT_NAME=/zinda
+_force_script = os.environ.get('FORCE_SCRIPT_NAME', '').strip().rstrip('/')
+FORCE_SCRIPT_NAME = f'{_force_script}/' if _force_script else None
 
 TAILWIND_APP_NAME = 'dark'
 
@@ -183,6 +197,8 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 CSRF_TRUSTED_ORIGINS = [
     "https://aj124.com",
     "https://www.aj124.com",
+    "https://kmzh.onrender.com",
+    "https://*.onrender.com",
 ]
 
 # Force Django to know it is behind a proxy and using HTTPS
@@ -193,6 +209,3 @@ USE_X_FORWARDED_PORT = True
 # Ensure Allauth uses the correct domain for the callback
 SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
 ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-
-# Important for subdirectory hosting
-# FORCE_SCRIPT_NAME = '/KyaMainZindaHoon'

@@ -1,16 +1,26 @@
-/* Mobile Bottom Navigation Bar Styles */
- .mobile-bottom-nav {
-  @apply fixed bottom-0 left-0 right-0 z-50 bg-black/90 flex justify-around items-center py-4 shadow-2xl border-t border-gray-800;
+/* Plain-CSS structural fallback. Visual styling lives in premium.css. */
+.mobile-bottom-nav {
+  position: fixed;
+  z-index: 80;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  pointer-events: auto;
 }
+
 .mobile-bottom-nav__item {
-  @apply flex flex-col items-center justify-center text-xs text-gray-300 hover:text-purple-400 transition-colors duration-200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
 }
+
 .mobile-bottom-nav__icon {
-  @apply mb-1 text-2xl md:text-3xl;
-}
-.mobile-bottom-nav__active {
-  @apply text-purple-400;
-}
-@media (min-width: 768px) {
-  .mobile-bottom-nav { display: none; }
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }

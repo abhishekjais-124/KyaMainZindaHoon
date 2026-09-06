@@ -10,8 +10,8 @@ body, html { overflow: auto !important; }
 .link-fade-in { animation: fade-in 0.4s cubic-bezier(0.4,0,0.2,1) both; }
 </style>
 
-<div class="w-full min-h-screen flex flex-col items-center justify-center px-4 pt-4 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800 -translate-y-28">
-  <div class="w-full max-w-sm flex flex-col gap-4">
+<div class="link-page w-full min-h-screen flex flex-col items-center justify-start px-4 pt-24 pb-32 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="link-content w-full max-w-sm flex flex-col gap-5">
 
     {% if messages %}
     <div class="link-fade-in w-full flex flex-col gap-2">
@@ -27,11 +27,12 @@ body, html { overflow: auto !important; }
     {% endif %}
 
     <div class="link-fade-in text-center">
-      <h1 class="text-xl font-bold text-white/95 tracking-tight">Add a friend</h1>
-      <p class="text-xs text-white/50 mt-0.5">Link with someone using their invite code</p>
+      <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70 mb-2">Private connection</p>
+      <h1 class="text-2xl font-bold text-white/95 tracking-tight">Add a friend</h1>
+      <p class="text-sm text-white/50 mt-1">Only connect with someone you know and trust</p>
     </div>
 
-    <div class="link-fade-in w-full rounded-2xl border border-white/10 bg-black/50 shadow-xl backdrop-blur-xl overflow-hidden" style="animation-delay: 0.06s;">
+    <div class="link-card link-fade-in w-full rounded-2xl border border-white/10 bg-black/50 shadow-xl backdrop-blur-xl overflow-hidden" style="animation-delay: 0.06s;">
       <div class="px-4 py-3 border-b border-white/5">
         <div class="flex items-center gap-2.5">
           <span class="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 border border-white/10">
@@ -48,7 +49,7 @@ body, html { overflow: auto !important; }
       <form method="post" class="px-4 py-4 space-y-3">
         {% csrf_token %}
         <div>
-          <label for="invite-code-input" class="block text-xs font-medium text-white/50 mb-1.5" style="margin-top: -2rem">Code</label>
+          <label for="invite-code-input" class="block text-xs font-medium text-white/50 mb-1.5">Code</label>
           <input type="text" id="invite-code-input" name="invite_code" maxlength="5" placeholder="E.G. A1B2C" required
             class="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white text-center placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 transition-all duration-200 font-mono text-base tracking-[0.2em] uppercase"
             autocomplete="off" />
@@ -64,6 +65,7 @@ body, html { overflow: auto !important; }
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         View my connections
       </a>
+      <p class="mt-5 text-[11px] leading-relaxed text-white/35">Invite codes create a direct, private connection. Your information is never public.</p>
     </div>
   </div>
 </div>

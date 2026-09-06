@@ -4,7 +4,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   min-width: 100vw;
-  background: #18181b;
+  background: #080c12;
   /* Safe area insets so content isn't under notch or home indicator */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);

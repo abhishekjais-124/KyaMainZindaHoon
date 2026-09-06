@@ -13,6 +13,7 @@ urlpatterns = [
     path('get_invite_code/', views.get_invite_code, name='get_invite_code'),
     path('friends/', views.friends_view, name='friends'),
     path('friends/save_emergency/', views.friends_save_emergency, name='friends_save_emergency'),
+    path('friends/save_relation/', views.friends_save_relation, name='friends_save_relation'),
     path('loading/', views.loading_screen, name='loading_screen'),
     path('alert/danger', views.alert_danger, name='alert_danger'),
     path('alert/warning', views.alert_warning, name='alert_warning'),

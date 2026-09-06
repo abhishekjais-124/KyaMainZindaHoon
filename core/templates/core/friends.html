@@ -34,14 +34,63 @@ body, html { overflow: auto !important; }
 .btn-emergency-update.save-mode { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
 .btn-emergency-update.save-mode:hover { background: rgba(255,255,255,0.18); }
 
+/* Compact relationship meter */
+.relation-card { transition: border-color 0.25s ease, background-color 0.25s ease; }
+.relation-card.is-expanded { border-color: rgba(52, 211, 153, 0.22); background: rgba(0, 0, 0, 0.5); }
+.relation-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.28s ease, opacity 0.2s ease;
+}
+.relation-details-inner { min-height: 0; overflow: hidden; }
+.relation-card.is-expanded .relation-details { grid-template-rows: 1fr; opacity: 1; }
+.relation-chevron { transition: transform 0.25s ease; }
+.relation-card.is-expanded .relation-chevron { transform: rotate(180deg); }
+.relation-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgb(52, 211, 153) 0 var(--relation-progress, 100%),
+    rgba(255, 255, 255, 0.18) var(--relation-progress, 100%) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+.relation-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(52, 211, 153);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+}
+.relation-range::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(52, 211, 153);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+}
+
 /* Member-added success overlay */
 #member-added-overlay {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(16px);
-  opacity: 0; visibility: hidden; transition: opacity 0.35s ease, visibility 0.35s ease;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
 }
-#member-added-overlay.show { opacity: 1; visibility: visible; }
+#member-added-overlay.show {
+  opacity: 1; visibility: visible; pointer-events: auto;
+}
 #member-added-overlay .overlay-inner {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem;
   transform: scale(0.7); opacity: 0;
@@ -138,13 +187,14 @@ body, html { overflow: auto !important; }
   </div>
 </div>
 
-<div class="w-full min-h-screen flex flex-col items-center px-4 pt-24 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="w-full max-w-sm flex flex-col gap-6">
+<div class="friends-page w-full min-h-screen flex flex-col items-center px-4 pt-28 pb-32 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="friends-content w-full max-w-sm flex flex-col gap-6">
 
     <!-- Page title -->
     <div class="friends-fade-in text-center">
+      <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70 mb-2">Trusted circle</p>
       <h1 class="text-2xl font-bold text-white/95 tracking-tight">Friends & Connections</h1>
-      <p class="text-sm text-white/50 mt-1">Stay linked with people who care</p>
+      <p class="text-sm text-white/50 mt-1">The people who can see your check-in status</p>
     </div>
 
     <!-- Active SOS: who triggered (notified person sees this) -->
@@ -195,7 +245,7 @@ body, html { overflow: auto !important; }
     {% endif %}
 
     <!-- Add connection card -->
-    <div class="friends-fade-in w-full rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl p-4" style="animation-delay: 0.05s;">
+    <div class="friends-add-card friends-fade-in w-full rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl p-4" style="animation-delay: 0.05s;">
       <div class="flex items-center gap-2 mb-3">
         <span class="flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 border border-white/10">
           <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
@@ -210,36 +260,39 @@ body, html { overflow: auto !important; }
       <p class="text-xs text-white/40 mt-2">Ask your friend for their invite code.</p>
     </div>
 
-    <!-- Summary strip -->
-    <div class="friends-fade-in flex items-center justify-between px-4 py-2 rounded-xl bg-black/30 border border-white/5" style="animation-delay: 0.1s;">
-      <span class="text-sm font-medium text-white/70 flex items-center gap-2">
-        <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        {% if connections %}{{ connections|length }} connection{{ connections|length|pluralize }}{% else %}No connections yet{% endif %}
-      </span>
-    </div>
-
-    <!-- Update emergency connections button (only when there are connections) -->
-    {% if connections %}
-    <div class="friends-fade-in w-full flex justify-center" style="animation-delay: 0.12s;">
+    <!-- Summary + emergency toolbar -->
+    <div class="friends-toolbar friends-fade-in w-full flex items-stretch gap-2" style="animation-delay: 0.1s;">
+      <div class="friends-summary flex items-center px-3.5 py-2 rounded-xl bg-black/30 border border-white/5">
+        <span class="text-sm font-medium text-white/70 flex items-center gap-2 whitespace-nowrap">
+          <svg class="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          {% if connections %}{{ connections|length }} connection{{ connections|length|pluralize }}{% else %}No connections yet{% endif %}
+        </span>
+      </div>
+      {% if connections %}
       <button type="button" id="btn-emergency-update" class="btn-emergency-update">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-        <span id="btn-emergency-label">Update emergency connections</span>
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+        <span id="btn-emergency-label">Update emergency</span>
       </button>
+      {% endif %}
     </div>
-    {% endif %}
 
     <!-- Your connections list -->
     <div id="connections-list-wrap" class="friends-fade-in w-full" style="animation-delay: 0.15s;">
-      <h2 class="text-sm font-semibold text-white/60 uppercase tracking-wider mb-3 px-1">Your connections</h2>
+      <h2 class="text-sm font-semibold text-white/60 uppercase tracking-wider mb-3 px-1 text-center">Your connections</h2>
 
       {% if connections %}
       <ul class="w-full flex flex-col gap-3">
         {% for conn in connections %}
           {% with friend=conn.user friend_profile=friend.profile is_emergency=conn.is_emergency %}
           <li class="friend-card w-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-3.5 flex items-center gap-4 shadow-lg cursor-pointer friend-item group"
+              data-mapping-id="{{ conn.mapping_id }}"
               data-name="{{ friend.get_full_name|default:friend.username|default:friend.email|default:'Unknown' }}"
               data-email="{{ friend.email }}"
-              data-status="{% if friend_profile.snooze_enabled %}Paused{% elif friend_profile.is_missing %}Danger{% elif friend_profile.is_warning %}Warning{% else %}Active{% endif %}"
+              data-status="{% if friend_profile.snooze_enabled %}Paused{% elif conn.is_missing %}Danger{% elif conn.is_warning %}Warning{% else %}Active{% endif %}"
+              data-relation-level="{{ conn.relation_level }}"
+              data-relation-label="{{ conn.relation_label }}"
+              data-danger-hours="{{ conn.danger_hours }}"
+              data-warning-hours="{{ conn.warning_hours|stringformat:'g' }}"
               data-joined="{{ friend.date_joined|date:'d M Y, g:i A' }}"
               data-last-login="{% if friend.last_login %}{{ friend.last_login|date:'d M Y, g:i A' }}{% else %}—{% endif %}"
               data-last-checkin="{% if friend_profile.last_check_in %}{{ friend_profile.last_check_in|timesince }} ago{% else %}—{% endif %}"
@@ -257,13 +310,14 @@ body, html { overflow: auto !important; }
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-white/95 truncate">{{ friend.get_full_name|default:friend.username|default:friend.email|default:"Unknown" }}</p>
               <p class="text-xs text-white/50 truncate">{% if friend_profile.last_check_in %}{{ friend_profile.last_check_in|timesince }} ago{% else %}No check-in yet{% endif %}</p>
+              <p class="relation-summary text-[11px] text-emerald-300/70 truncate mt-0.5">{{ conn.relation_label }} · {{ conn.danger_hours }}h limit</p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               {% if friend_profile.snooze_enabled %}
                 <span class="text-xs px-2.5 py-1 rounded-full bg-gray-500/25 text-gray-300 font-medium">Paused</span>
-              {% elif friend_profile.is_missing %}
+              {% elif conn.is_missing %}
                 <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/25 text-red-300 font-medium">Danger</span>
-              {% elif friend_profile.is_warning %}
+              {% elif conn.is_warning %}
                 <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 font-medium">Warning</span>
               {% else %}
                 <span class="text-xs px-2.5 py-1 rounded-full bg-green-500/25 text-green-300 font-medium">Active</span>
@@ -289,7 +343,7 @@ body, html { overflow: auto !important; }
 </div>
 
 <!-- Friend details modal -->
-<div id="friend-modal" class="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 p-4 pb-8 hidden modal-backdrop overflow-y-auto">
+<div id="friend-modal" class="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-12 p-4 pb-8 hidden modal-backdrop overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-name">
   <div class="relative w-full max-w-sm rounded-3xl overflow-hidden flex flex-col bg-black/90 border border-white/15 shadow-2xl friend-modal-card" style="box-shadow: 0 24px 48px rgba(0,0,0,0.5);">
     <button id="modal-delete-btn" class="absolute top-4 left-4 z-10 w-10 h-10 rounded-full flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-white/10 transition-all duration-200 focus:outline-none" aria-label="Remove connection">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -341,6 +395,39 @@ body, html { overflow: auto !important; }
           <p id="modal-location-updated" class="text-white/45 text-xs"></p>
         </div>
       </div>
+      <div>
+        <p class="text-center text-sm font-semibold text-white/85 mb-2">Relationship meter</p>
+      <div id="relation-card" class="relation-card rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
+        <button type="button" id="relation-toggle" class="w-full flex items-center justify-between gap-3 text-left focus:outline-none" aria-expanded="false" aria-controls="relation-details">
+          <p id="relation-compact-summary" class="min-w-0 text-white/65 text-xs truncate"></p>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span id="relation-hours-badge" class="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold"></span>
+            <span class="w-7 h-7 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/55" aria-hidden="true">
+              <svg class="relation-chevron w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/>
+              </svg>
+            </span>
+          </div>
+        </button>
+        <div id="relation-details" class="relation-details">
+          <div class="relation-details-inner">
+            <div class="pt-4 mt-3 border-t border-white/10">
+              <p class="text-white/45 text-xs mb-2">Sets this connection’s alert window.</p>
+              <label for="relation-meter" class="block text-[11px] font-semibold uppercase tracking-wider text-white/45 mb-1.5">Connection strength</label>
+              <div class="pt-2 px-1">
+                <input id="relation-meter" type="range" min="1" max="5" step="1" value="5" class="relation-range" aria-label="Relationship strength" />
+                <div class="flex justify-between text-[10px] text-white/40 mt-2">
+                  <span>Very strong</span>
+                  <span>Casual</span>
+                </div>
+              </div>
+              <p id="relation-meter-label" class="text-center text-xs font-medium text-white/65 mt-2.5"></p>
+              <button type="button" id="relation-save-btn" class="w-full mt-3 py-2.5 rounded-xl border border-emerald-400/25 bg-emerald-500/15 text-emerald-200 text-sm font-semibold hover:bg-emerald-500/25 transition-all">Save relationship</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
   </div>
 </div>
@@ -357,7 +444,49 @@ document.addEventListener('DOMContentLoaded', function() {
   const lastCheckinEl = document.getElementById('modal-last-checkin');
   const modalDeleteBtn = document.getElementById('modal-delete-btn');
   const statusBadge = document.getElementById('modal-status-badge');
+  const relationMeter = document.getElementById('relation-meter');
+  const relationMeterLabel = document.getElementById('relation-meter-label');
+  const relationHoursBadge = document.getElementById('relation-hours-badge');
+  const relationSaveBtn = document.getElementById('relation-save-btn');
+  const relationCard = document.getElementById('relation-card');
+  const relationToggle = document.getElementById('relation-toggle');
+  const relationCompactSummary = document.getElementById('relation-compact-summary');
+  const relationOptions = {
+    1: { label: 'Very strong', danger: 12 },
+    2: { label: 'Strong', danger: 18 },
+    3: { label: 'Close', danger: 24 },
+    4: { label: 'Regular', danger: 36 },
+    5: { label: 'Casual', danger: 48 }
+  };
   let currentEmail = null;
+  let currentItem = null;
+
+  function updateRelationPreview() {
+    var option = relationOptions[Number(relationMeter.value)] || relationOptions[5];
+    var warning = option.danger / 2;
+    relationMeterLabel.textContent =
+      'Warning at ' + warning + 'h · Danger at ' + option.danger + 'h';
+    relationCompactSummary.textContent = option.label + ' · Warning ' + warning + 'h';
+    relationHoursBadge.textContent = option.danger + 'h limit';
+    relationMeter.style.setProperty(
+      '--relation-progress',
+      ((Number(relationMeter.value) - 1) / 4 * 100) + '%'
+    );
+    relationMeterLabel.setAttribute(
+      'title',
+      'Warning after ' + warning + ' hours; danger after ' + option.danger + ' hours'
+    );
+  }
+
+  function setRelationExpanded(expanded) {
+    relationCard.classList.toggle('is-expanded', expanded);
+    relationToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  }
+
+  relationToggle.addEventListener('click', function() {
+    setRelationExpanded(!relationCard.classList.contains('is-expanded'));
+  });
+  relationMeter.addEventListener('input', updateRelationPreview);
 
   // Emergency connections: Update <-> Save toggle
   const btnEmergency = document.getElementById('btn-emergency-update');
@@ -384,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (data.success) {
             listWrap.classList.remove('emergency-edit-mode');
             btnEmergency.classList.remove('save-mode');
-            btnLabel.textContent = 'Update emergency connections';
+            btnLabel.textContent = 'Update emergency';
             // Update badges without full reload: show Emergency only where checked
             listWrap.querySelectorAll('.friend-item').forEach(function(li) {
               var email = li.getAttribute('data-email');
@@ -437,6 +566,10 @@ document.addEventListener('DOMContentLoaded', function() {
       lastLoginEl.textContent = item.getAttribute('data-last-login');
       lastCheckinEl.textContent = item.getAttribute('data-last-checkin') || '—';
       currentEmail = email;
+      currentItem = item;
+      relationMeter.value = item.getAttribute('data-relation-level') || '5';
+      updateRelationPreview();
+      setRelationExpanded(false);
       statusBadge.textContent = status;
       statusBadge.className = 'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide ';
       if (status === 'Paused') statusBadge.className += 'bg-gray-500/25 text-gray-300';
@@ -506,6 +639,42 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(function() {
       showMessagePopup(false, 'Could not remove connection.');
+    });
+  });
+
+  relationSaveBtn.addEventListener('click', function() {
+    if (!currentItem) return;
+    relationSaveBtn.disabled = true;
+    relationSaveBtn.textContent = 'Saving…';
+    fetch('{% url "friends_save_relation" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify({
+        mapping_id: currentItem.getAttribute('data-mapping-id'),
+        relation_level: Number(relationMeter.value)
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) throw new Error(data.message || 'Could not save relationship.');
+      currentItem.setAttribute('data-relation-level', data.relation_level);
+      currentItem.setAttribute('data-relation-label', data.relation_label);
+      currentItem.setAttribute('data-danger-hours', data.danger_hours);
+      currentItem.setAttribute('data-warning-hours', data.warning_hours);
+      var summary = currentItem.querySelector('.relation-summary');
+      if (summary) summary.textContent = data.relation_label + ' · ' + data.danger_hours + 'h limit';
+      if (typeof showMessagePopup === 'function') showMessagePopup(true, data.message);
+      setTimeout(function() { window.location.reload(); }, 900);
+    })
+    .catch(function(error) {
+      if (typeof showMessagePopup === 'function') {
+        showMessagePopup(false, error.message || 'Could not save relationship.');
+      }
+      relationSaveBtn.disabled = false;
+      relationSaveBtn.textContent = 'Save relationship';
     });
   });
 });

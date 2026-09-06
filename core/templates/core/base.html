@@ -3,8 +3,9 @@
 <html lang="en" class="dark{% if emergency_sos_active %} emergency-mode{% endif %}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-    <meta name="theme-color" content="{% if emergency_sos_active %}#7f1d1d{% else %}#18181b{% endif %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="{% if emergency_sos_active %}#7f1d1d{% else %}#080c12{% endif %}">
+    <meta name="description" content="A private check-in space that helps the people you trust know you're okay.">
     <!-- Fullscreen when launched from home screen (iOS) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,9 +16,10 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="/static/icons/icon-512x512.png">
     <link rel="stylesheet" href="/static/css/pwa_fullscreen.css">
-    {% if emergency_sos_active %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% if emergency_sos_active %}
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     {% endif %}
     <title>{% block title %}Am I Ok?{% endblock %}</title>
@@ -30,11 +32,12 @@
             },
         }
     </script>
+    <link rel="stylesheet" href="{% static 'css/mobile_bottom_nav.css' %}">
+    {% block extra_head %}{% endblock %}
+    {% block dashboard_noscroll %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/premium.css' %}">
 </head>
-{% block extra_head %}{% endblock %}
-{% block dashboard_noscroll %}{% endblock %}
-</head>
-<body class="min-h-screen text-white transition-[background-image] duration-500 {% if emergency_sos_active %}emergency-body{% else %}bg-gradient-to-br from-black via-gray-900 to-gray-800{% endif %}" id="body-root">
+<body class="app-body min-h-screen text-white transition-[background-image] duration-500 {% if emergency_sos_active %}emergency-body{% endif %}" id="body-root">
     {% if emergency_sos_active %}
     <!-- Emergency SOS active: small pill top-right -->
     <div id="emergency-sos-banner" class="emergency-banner fixed top-3 right-3 z-[100] flex items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 shadow-lg" style="background: linear-gradient(145deg, rgba(127,29,29,0.92) 0%, rgba(153,27,27,0.9) 100%); backdrop-filter: blur(12px); box-shadow: 0 0 0 1px rgba(251,207,232,0.15), 0 4px 16px rgba(0,0,0,0.35), 0 0 24px rgba(220,38,38,0.12); font-family: 'Outfit', system-ui, sans-serif;">
@@ -87,21 +90,56 @@
     </style>
     {% endif %}
         {% include 'core/partials/loader.html' %}
-        <div class="container mx-auto px-2 py-8 flex flex-col items-center justify-center min-h-screen">
-                {% block content %}{% endblock %}
-        </div>
+        <main class="app-shell container mx-auto flex min-h-screen flex-col items-center justify-center">
+            {% block content %}{% endblock %}
+        </main>
     <script>
-      // Utility to show/hide loader
       function showLoader() {
-          document.getElementById('funny-loading').style.display = 'flex';
+          const loader = document.getElementById('funny-loading');
+          if (!loader) return;
+          loader.classList.add('is-visible');
+          loader.setAttribute('aria-hidden', 'false');
       }
+
       function hideLoader() {
-          document.getElementById('funny-loading').style.display = 'none';
+          const loader = document.getElementById('funny-loading');
+          if (!loader) return;
+          loader.classList.remove('is-visible');
+          loader.setAttribute('aria-hidden', 'true');
       }
-      // Show loader until page is ready (visible by default in HTML); hide when DOM is loaded
-      document.addEventListener('DOMContentLoaded', function() {
-          hideLoader();
+
+      // Give full page changes one consistent, polished transition.
+      document.addEventListener('click', function(event) {
+          if (event.defaultPrevented || event.button !== 0 ||
+              event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+          const link = event.target.closest('a[href]');
+          if (!link || link.hasAttribute('download') ||
+              (link.target && link.target.toLowerCase() !== '_self') ||
+              link.dataset.noLoader !== undefined) return;
+
+          const destination = new URL(link.href, window.location.href);
+          if (!['http:', 'https:'].includes(destination.protocol)) return;
+
+          const sameDocument = destination.origin === window.location.origin &&
+              destination.pathname === window.location.pathname &&
+              destination.search === window.location.search;
+          if (sameDocument && destination.hash) return;
+
+          showLoader();
       });
+
+      document.addEventListener('submit', function(event) {
+          const form = event.target;
+          if ((form.target && form.target.toLowerCase() !== '_self') ||
+              form.dataset.noLoader !== undefined) return;
+          showLoader();
+      });
+
+      document.addEventListener('DOMContentLoaded', hideLoader);
+      window.addEventListener('pageshow', hideLoader);
+      window.addEventListener('beforeunload', showLoader);
+
       // Register service worker for PWA
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
@@ -109,11 +147,11 @@
         });
       }
     </script>
-<!-- Mobile Bottom Navigation Bar -->
-<nav class="mobile-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center py-3 pb-6 px-2 rounded-t-[2.5rem] mx-2 shadow-2xl animate-fade-in"
-    style="background: rgba(20,20,20,0.22); backdrop-filter: blur(22px); border-top: 2px solid rgba(255,255,255,0.10); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);">
-    <a href="/KyaMainZindaHoon/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-home">
-        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+{% if user.is_authenticated %}
+<!-- Primary navigation -->
+<nav class="mobile-bottom-nav" aria-label="Primary navigation">
+    <a href="{% url 'dashboard' %}" class="mobile-bottom-nav__item group {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" id="nav-home" data-label="Home" aria-label="Home" {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>
+        <span class="mobile-bottom-nav__icon">
             <!-- Home Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125h3.75v-4.5a.375.375 0 01.375-.375h4.5a.375.375 0 01.375.375v4.5h3.75c.621 0 1.125-.504 1.125-1.125V9.75" />
@@ -121,16 +159,16 @@
         </span>
         <!-- text removed -->
     </a>
-    <button type="button" onclick="showInviteCodePopup()" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-add" style="background:none;border:none;outline:none;">
-        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+    <button type="button" onclick="showInviteCodePopup()" class="mobile-bottom-nav__item group {% if request.resolver_match.url_name == 'link_partner' %}is-active{% endif %}" id="nav-add" data-label="Invite" aria-label="Invite a connection">
+        <span class="mobile-bottom-nav__icon">
             <!-- Plus Circle Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
         </span>
     </button>
-    <a href="/KyaMainZindaHoon/friends/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-friends">
-        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+    <a href="{% url 'friends' %}" class="mobile-bottom-nav__item group {% if request.resolver_match.url_name == 'friends' %}is-active{% endif %}" id="nav-friends" data-label="Circle" aria-label="Connections" {% if request.resolver_match.url_name == 'friends' %}aria-current="page"{% endif %}>
+        <span class="mobile-bottom-nav__icon">
             <!-- Users Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm6 2.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-15 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
@@ -138,8 +176,8 @@
         </span>
         <!-- text removed -->
     </a>
-    <a href="/KyaMainZindaHoon/profile/" class="mobile-bottom-nav__item flex flex-col items-center group transition-all duration-300 hover:scale-125 active:scale-100" id="nav-profile">
-        <span class="mobile-bottom-nav__icon mb-1 text-4xl text-white group-hover:text-black transition-colors duration-300 drop-shadow-lg" style="background: rgba(255,255,255,0.08); border-radius: 1.2rem; padding: 0.5rem; box-shadow: 0 2px 12px #0002;">
+    <a href="{% url 'profile' %}" class="mobile-bottom-nav__item group {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'settings' %}is-active{% endif %}" id="nav-profile" data-label="Profile" aria-label="Profile" {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'settings' %}aria-current="page"{% endif %}>
+        <span class="mobile-bottom-nav__icon">
             <!-- User Circle Icon (Heroicons) -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 drop-shadow-lg group-hover:animate-bounce">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9A3.75 3.75 0 1112 5.25 3.75 3.75 0 0115.75 9zm-9 9.75a6.75 6.75 0 1113.5 0v.375a.375.375 0 01-.375.375H7.125a.375.375 0 01-.375-.375V18.75z" />
@@ -148,18 +186,26 @@
         <!-- text removed -->
     </a>
 </nav>
-<link rel="stylesheet" href="{% static 'css/mobile_bottom_nav.css' %}">
-{% if user.is_authenticated %}
-        {% include 'core/invite_code_popup.html' %}
-        {% include 'core/message_popup.html' %}
+{% include 'core/invite_code_popup.html' %}
+{% include 'core/message_popup.html' %}
 {% endif %}
 <script>
 function showInviteCodePopup() {
-    fetch('/KyaMainZindaHoon/get_invite_code/')
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('invite-code-value').innerText = data.invite_code;
-            document.getElementById('invite-code-popup').style.display = 'flex';
+    fetch('{% url "get_invite_code" %}')
+        .then(function(r) {
+            if (!r.ok) throw new Error('Failed to load invite code');
+            return r.json();
+        })
+        .then(function(data) {
+            var valueEl = document.getElementById('invite-code-value');
+            var popup = document.getElementById('invite-code-popup');
+            if (valueEl) valueEl.innerText = data.invite_code;
+            if (popup) popup.style.display = 'flex';
+        })
+        .catch(function() {
+            if (typeof showMessagePopup === 'function') {
+                showMessagePopup(false, 'Could not load your invite code. Please try again.');
+            }
         });
 }
 </script>

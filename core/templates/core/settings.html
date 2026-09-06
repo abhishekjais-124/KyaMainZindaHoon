@@ -1,64 +1,10 @@
-<style>
-body, html { overflow: hidden !important; }
-.settings-switch {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 3.25rem;
-  height: 1.75rem;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 9999px;
-  cursor: pointer;
-  position: relative;
-  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.2s ease;
-  flex-shrink: 0;
-}
-.settings-switch:hover {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.22);
-}
-.settings-switch:checked {
-  background: rgba(34, 197, 94, 0.5);
-  border-color: rgba(34, 197, 94, 0.6);
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
-}
-.settings-switch:checked:hover {
-  background: rgba(34, 197, 94, 0.6);
-  border-color: rgba(34, 197, 94, 0.7);
-}
-.settings-switch::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 1.35rem;
-  height: 1.35rem;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.settings-switch:checked::before {
-  transform: translateX(1.5rem);
-}
-.settings-switch.snooze-switch:checked {
-  background: rgba(220, 38, 38, 0.5);
-  border-color: rgba(220, 38, 38, 0.6);
-  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
-}
-.settings-switch.snooze-switch:checked:hover {
-  background: rgba(220, 38, 38, 0.6);
-  border-color: rgba(220, 38, 38, 0.7);
-}
-</style>
-
 {% extends 'core/base.html' %}
 {% load static %}
 
 {% block content %}
 {% include 'core/app_icon.html' %}
 
-<div class="absolute right-0 top-0 mt-11 mr-4 z-20 flex items-center justify-end">
+<div class="page-corner-action flex items-center justify-end">
   <a href="{% url 'profile' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white/50 hover:text-white/80 hover:bg-black/50 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-white/20" aria-label="Close settings">
     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
       <path d="M18 6L6 18M6 6l12 12" />
@@ -66,11 +12,12 @@ body, html { overflow: hidden !important; }
   </a>
 </div>
 
-<div class="min-h-screen flex flex-col items-center px-4 pt-28 pb-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+<div class="settings-page min-h-screen w-full flex flex-col items-center px-4 pt-28 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800">
   <div class="w-full max-w-sm flex flex-col gap-5">
     <div class="text-center">
+      <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70 mb-2">Your control</p>
       <h1 class="text-2xl font-bold text-white/95 tracking-tight">Settings</h1>
-      <p class="text-sm text-white/50 mt-1">Preferences and privacy</p>
+      <p class="text-sm text-white/50 mt-1">Privacy and check-in preferences</p>
     </div>
 
     <div class="rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl overflow-hidden">
@@ -118,14 +65,14 @@ body, html { overflow: hidden !important; }
 </div>
 
 <!-- Snooze confirmation popup -->
-<div id="snooze-confirm-popup" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" style="backdrop-filter: blur(12px); background: rgba(0,0,0,0.6);">
+<div id="snooze-confirm-popup" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" style="backdrop-filter: blur(12px); background: rgba(0,0,0,0.6);" role="dialog" aria-modal="true" aria-labelledby="snooze-confirm-title">
   <div class="relative w-full max-w-sm rounded-3xl overflow-hidden border border-white/10 bg-black/90 shadow-2xl">
     <div class="p-6">
       <div class="flex items-center gap-3 mb-4">
         <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-red-500/20 border border-red-400/25">
           <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </span>
-        <h3 class="text-lg font-bold text-white">Enable Snooze?</h3>
+        <h3 id="snooze-confirm-title" class="text-lg font-bold text-white">Enable Snooze?</h3>
       </div>
       <p class="text-sm text-white/70 leading-relaxed mb-3">If you enable Snooze:</p>
       <ul class="text-sm text-white/60 space-y-2 mb-6 list-disc list-inside">

@@ -9,10 +9,22 @@ from datetime import timedelta
 from allauth.account.forms import LoginForm, SignupForm
 from allauth.account.utils import perform_login
 from .models import Profile, UserPartnerMappings, SOSAlert, SOSResolvedNotification
-from .utils import send_alert_via_emailjs
+from .utils import send_sos_via_emailjs
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
+
+
+def _invite_link_response(request, profile, invite_code, success_redirect):
+    """Shared invite-code friend add for friends/profile/link_partner views."""
+    ok, message = Profile.link_by_invite_code(profile, invite_code)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'success': ok, 'message': message})
+    if ok:
+        messages.success(request, message)
+        return redirect(success_redirect)
+    messages.error(request, message)
+    return None
 
 
 def alert_danger(request):
@@ -51,40 +63,21 @@ def friends_view(request):
     profile = request.user.profile
     # Handle invite code join
     if request.method == 'POST' and 'invite_code' in request.POST:
-        invite_code = request.POST.get('invite_code', '').strip().lower()
-        if invite_code:
-            try:
-                partner_profile = Profile.objects.get(invite_code=invite_code)
-                if partner_profile == profile:
-                    error_msg = "You can't add yourself as a friend."
-                elif profile.is_partner_with(partner_profile):
-                    error_msg = "You're already friends with this person."
-                else:
-                    UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
-                    UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    success_msg = "Friend added!"
-                    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                        return JsonResponse({'success': True, 'message': success_msg})
-                    messages.success(request, success_msg)
-                    return redirect('friends')
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': error_msg})
-                messages.error(request, error_msg)
-            except Profile.DoesNotExist:
-                error_msg = "Invalid invite code."
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': error_msg})
-                messages.error(request, error_msg)
+        response = _invite_link_response(
+            request,
+            profile,
+            request.POST.get('invite_code', ''),
+            success_redirect='friends',
+        )
+        if response is not None:
+            return response
 
     # Handle delete mapping (AJAX)
     if request.method == 'POST' and 'delete_mapping' in request.POST:
         partner_email = request.POST.get('delete_mapping')
         try:
             partner_user = User.objects.get(email=partner_email)
-            partner_profile = partner_user.profile
-            # Deactivate both directions
-            UserPartnerMappings.objects.filter(user=profile, partner=partner_profile, is_active=True).update(is_active=False)
-            UserPartnerMappings.objects.filter(user=partner_profile, partner=profile, is_active=True).update(is_active=False)
+            profile.unlink_from(partner_user.profile)
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': True, 'message': 'Connection deleted.'})
             messages.success(request, 'Connection deleted.')
@@ -99,8 +92,15 @@ def friends_view(request):
     active_mappings = UserPartnerMappings.objects.filter(user=profile, is_active=True)
     for mapping in active_mappings:
         connections.append({
+            'mapping_id': mapping.id,
             'user': mapping.partner.user,
             'is_emergency': mapping.is_emergency,
+            'relation_level': mapping.relation_level,
+            'relation_label': mapping.relation_label,
+            'danger_hours': mapping.danger_hours,
+            'warning_hours': mapping.warning_hours,
+            'is_missing': mapping.is_missing(),
+            'is_warning': mapping.is_warning(),
         })
 
     # Active SOS alerts received by this user (for "who triggered SOS" on friends page)
@@ -155,6 +155,52 @@ def friends_save_emergency(request):
 
 
 @login_required
+@require_POST
+def friends_save_relation(request):
+    """Save the shared relation meter for one active connection."""
+    import json
+
+    profile = request.user.profile
+    try:
+        data = json.loads(request.body)
+        mapping_id = int(data.get('mapping_id'))
+        relation_level = int(data.get('relation_level'))
+        relation_choice = UserPartnerMappings.RelationLevel(relation_level)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse(
+            {'success': False, 'message': 'Invalid relationship setting.'},
+            status=400,
+        )
+
+    mapping = get_object_or_404(
+        UserPartnerMappings,
+        id=mapping_id,
+        user=profile,
+        is_active=True,
+    )
+    UserPartnerMappings.objects.filter(
+        Q(user=profile, partner=mapping.partner)
+        | Q(user=mapping.partner, partner=profile),
+        is_active=True,
+    ).update(
+        relation_level=relation_choice,
+        heartbeat_alert_sent=False,
+    )
+    danger_hours = UserPartnerMappings.danger_hours_for_level(relation_choice)
+    return JsonResponse({
+        'success': True,
+        'message': (
+            f'Relationship set to {relation_choice.label}. '
+            f'Danger starts after {danger_hours} hours.'
+        ),
+        'relation_level': relation_choice.value,
+        'relation_label': relation_choice.label,
+        'danger_hours': danger_hours,
+        'warning_hours': danger_hours / 2,
+    })
+
+
+@login_required
 def profile_view(request):
     profile = request.user.profile
     # Handle name update
@@ -177,30 +223,14 @@ def profile_view(request):
 
     # Handle invite code join
     if request.method == 'POST' and 'invite_code' in request.POST:
-        invite_code = request.POST.get('invite_code', '').strip().lower()
-        if invite_code:
-            try:
-                partner_profile = Profile.objects.get(invite_code=invite_code)
-                if partner_profile == profile:
-                    error_msg = "You can't add yourself as a friend."
-                elif profile.is_partner_with(partner_profile):
-                    error_msg = "You're already friends with this person."
-                else:
-                    UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
-                    UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    success_msg = "Friend added!"
-                    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                        return JsonResponse({'success': True, 'message': success_msg})
-                    messages.success(request, success_msg)
-                    return redirect('profile')
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': error_msg})
-                messages.error(request, error_msg)
-            except Profile.DoesNotExist:
-                error_msg = "Invalid invite code."
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': error_msg})
-                messages.error(request, error_msg)
+        response = _invite_link_response(
+            request,
+            profile,
+            request.POST.get('invite_code', ''),
+            success_redirect='profile',
+        )
+        if response is not None:
+            return response
 
     paired_users = [p.user for p in profile.get_partners()]
 
@@ -244,8 +274,7 @@ def settings_view(request):
 
 def home(request):
     if request.user.is_authenticated:
-        profile = request.user.profile
-        return render(request, 'core/dashboard.html', {'profile': profile})
+        return redirect('dashboard')
     login_form = LoginForm(request.POST or None, request=request)
     signup_form = SignupForm(request.POST or None)
     active_tab = 'login'
@@ -285,35 +314,34 @@ def dashboard(request):
         'profile': profile,
         'has_emergency_contacts': has_emergency_contacts,
         'has_active_sos_sent': has_active_sos_sent,
+        'danger_hours': profile.danger_hours,
+        'warning_hours': profile.warning_hours,
     })
 
 @login_required
 def link_partner(request):
     if request.method == 'POST':
-        invite_code = request.POST.get('invite_code', '').strip().lower()
-        try:
-            partner_profile = Profile.objects.get(invite_code=invite_code)
-            if partner_profile.user == request.user:
-                messages.error(request, "You can't add yourself as a friend.")
-            else:
-                profile = request.user.profile
-                if profile.is_partner_with(partner_profile):
-                    messages.error(request, "You're already friends with this person.")
-                else:
-                    UserPartnerMappings.objects.create(user=profile, partner=partner_profile, is_active=True)
-                    UserPartnerMappings.objects.create(user=partner_profile, partner=profile, is_active=True)
-                    messages.success(request, "Friend added!")
-                    return redirect(reverse('friends') + '?member_added=1')
-        except Profile.DoesNotExist:
-            messages.error(request, "User with this invite code does not exist.")
+        response = _invite_link_response(
+            request,
+            request.user.profile,
+            request.POST.get('invite_code', ''),
+            success_redirect=reverse('friends') + '?member_added=1',
+        )
+        if response is not None:
+            return response
     return render(request, 'core/link_partner.html')
 
 @login_required
 def check_in(request):
     if request.method == 'POST':
         profile = request.user.profile
-        profile.last_check_in = timezone.now()
+        checked_in_at = timezone.now()
+        profile.last_check_in = checked_in_at
         profile.alert_sent = False  # reset if was sent
+        UserPartnerMappings.objects.filter(
+            user=profile,
+            is_active=True,
+        ).update(heartbeat_alert_sent=False)
         # Store location when sharing is enabled (from JSON or form)
         if profile.share_location_with_friends:
             lat, lng = None, None
@@ -340,7 +368,10 @@ def check_in(request):
                 except (TypeError, ValueError):
                     pass
         profile.save()
-        return JsonResponse({'status': 'success'})
+        return JsonResponse({
+            'status': 'success',
+            'checked_in_at': checked_in_at.isoformat(),
+        })
     return JsonResponse({'status': 'error'}, status=400)
 
 
@@ -386,8 +417,11 @@ def sos_trigger(request):
         except (TypeError, ValueError):
             pass
     profile.save()
+    emergency_profiles = []
     for mapping in emergency_mappings:
         SOSAlert.objects.create(from_user=profile, to_user=mapping.partner, status=SOSAlert.Status.ACTIVE)
+        emergency_profiles.append(mapping.partner)
+    send_sos_via_emailjs(profile, emergency_profiles)
     return JsonResponse({'success': True, 'message': 'SOS sent to your emergency contacts.'})
 
 

@@ -5,7 +5,6 @@
 {% load static %}
 
 <style>
-    /* Disable text selection only in dashboard content */
     .dashboard-no-select, .dashboard-no-select * {
         user-select: none !important;
         -webkit-user-select: none !important;
@@ -13,48 +12,32 @@
         -ms-user-select: none !important;
         -webkit-touch-callout: none !important;
     }
-    /* Center content in visible area (above bottom nav); reserve space for nav */
-    .dashboard-main {
-        min-height: calc(100vh - 6rem);
-        min-height: calc(100dvh - 6rem);
-    }
-    @media (max-width: 430px) {
-        .dashboard-main {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            padding-top: 0;
-            padding-bottom: 0;
-            min-height: calc(100vh - 6rem - env(safe-area-inset-bottom, 0px));
-            min-height: calc(100dvh - 6rem - env(safe-area-inset-bottom, 0px));
-            gap: 0.75rem;
-        }
-        .dashboard-title { font-size: 1.5rem; padding: 0.5rem 1rem; }
-        .dashboard-loader-btn { width: min(72vw, 17rem); height: min(72vw, 17rem); min-width: 12rem; min-height: 12rem; }
-        .dashboard-loader-number { font-size: 5rem; }
-        .dashboard-status-card { padding: 0.75rem 1rem; gap: 0.75rem; }
-    }
 </style>
 {% block content %}
 {% include 'core/app_icon.html' %}
-<div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-12 pt-4 sm:pt-6 pb-6 sm:pb-8 gap-4 sm:gap-6 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-    <!-- Glassy Title Above Loader -->
-    <div class="flex flex-col items-center gap-4 sm:gap-6 w-full mt-0 sm:mt-2 -translate-y-12 pt-12 sm:pt-16">
-        <div class="mb-0 sm:mb-1 w-full flex flex-col items-center gap-2 px-1">
-            <span class="dashboard-title block text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-white/90 px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/40 backdrop-blur-2xl"
-                style="background: rgba(20,20,20,0.18); font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif; letter-spacing: 0.01em;">
+<div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800">
+    <div class="dashboard-stack flex flex-col items-center w-full">
+        <div class="dashboard-header w-full flex flex-col items-center gap-2">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70">Private check-in</p>
+            <span class="dashboard-title block font-extrabold tracking-tight text-white/90">
                 Am I Ok?
             </span>
-            <p class="text-sm sm:text-base text-white/50 font-medium tracking-wide text-center max-w-xs">Let friends know you're okay</p>
+            <p class="text-sm sm:text-base text-white/50 font-medium text-center max-w-xs">Let your trusted circle know you’re okay</p>
         </div>
-        <div class="relative flex flex-col items-center justify-center w-full mt-0 gap-2">
-            <button id="loader-btn" class="dashboard-loader-btn relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 hover:scale-105 active:scale-95 group overflow-hidden"
+        <div class="dashboard-checkin relative flex flex-col items-center justify-center w-full">
+            <button id="loader-btn" aria-label="Press and hold to check in" data-last-check-in="{{ profile.last_check_in|date:'c' }}" class="dashboard-loader-btn relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 active:scale-95 group overflow-hidden"
                 style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
                 <!-- Animated SVG Ring -->
                 <svg class="absolute inset-0 w-full h-full" width="288" height="288" viewBox="0 0 288 288">
                     <circle cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" opacity="0.10" />
-                    <circle id="loader-ring" cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="791.6813" stroke-dashoffset="791.6813" style="transition: stroke-dashoffset 0.18s cubic-bezier(.4,0,.2,1);" />
+                    <circle id="loader-ring" cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="791.6813" stroke-dashoffset="791.6813" transform="rotate(-90 144 144)" style="transition: stroke-dashoffset 0.35s linear;" />
                 </svg>
-                <span id="loader-number" class="dashboard-loader-number text-8xl sm:text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10">100</span>
+                <span id="danger-countdown" class="danger-countdown z-10" aria-live="off">
+                    <span id="danger-countdown-label" class="danger-countdown__label">Danger in</span>
+                    <span id="danger-countdown-time" class="danger-countdown__time">{{ danger_hours }}:00:00</span>
+                    <span id="danger-countdown-units" class="danger-countdown__units">hr : min : sec</span>
+                </span>
+                <span id="loader-number" class="dashboard-loader-number text-8xl sm:text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10" style="display:none;">0</span>
                 <span id="loader-tick" style="display:none;"
                     class="absolute inset-0 flex items-center justify-center z-20">
                     <span class="relative flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full shadow-2xl border border-green-300/30 bg-gradient-to-br from-green-400/30 via-green-300/20 to-white/10 backdrop-blur-2xl animate-tick-pop">
@@ -97,9 +80,9 @@
                 </style>
             </button>
             <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
-            <p class="text-xs sm:text-sm text-white/40 mt-1 text-center">Press and hold to mark attendance</p>
+            <p class="dashboard-hint text-xs sm:text-sm text-center">Press and hold to check in</p>
             <!-- SOS Emergency button (red + disabled when active SOS; gray + disabled when no contacts; else enabled) -->
-            <div class="relative inline-block mt-4 group/sos">
+            <div class="relative inline-block group/sos">
                 <button type="button" id="sos-trigger-btn" class="sos-trigger-btn px-5 py-2.5 rounded-2xl border backdrop-blur-2xl font-semibold text-sm tracking-wide shadow-xl transition-all duration-300 touch-manipulation {% if has_active_sos_sent %}bg-red-500/80 border-red-400/60 text-white cursor-not-allowed hover:scale-100 active:scale-100{% elif not has_emergency_contacts %}border border-white/20 bg-black/40 text-white/90 opacity-50 cursor-not-allowed hover:scale-100 hover:bg-black/40 hover:border-white/20 active:scale-100 active:bg-black/40 active:border-white/20{% else %}border border-white/20 bg-black/40 text-white/90 hover:scale-125 hover:bg-red-500/80 hover:border-red-400/50 hover:text-white active:scale-125 active:bg-red-500/80 active:border-red-400/50 active:text-white{% endif %}"
                     {% if not has_emergency_contacts or has_active_sos_sent %}disabled{% endif %}
                     data-share-location-in-sos="{% if profile.share_location_in_sos %}true{% else %}false{% endif %}">
@@ -114,8 +97,8 @@
 
         <!-- You triggered an SOS (triggerer sees this until someone resolves) -->
         {% if has_active_sos_sent %}
-        <div class="w-full max-w-md mx-auto mt-3 px-2 animate-fade-in">
-            <div class="rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 backdrop-blur-xl py-3 px-4 flex items-center gap-3">
+        <div class="dashboard-panel animate-fade-in">
+            <div class="dashboard-alert-card rounded-2xl border border-amber-500/40 bg-amber-500/10 backdrop-blur-xl py-3.5 px-4 flex items-center gap-3">
                 <span class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
                     <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </span>
@@ -128,66 +111,61 @@
         {% endif %}
 
         {% if profile and profile.last_check_in %}
-        <div class="w-full max-w-lg mx-auto mt-1 sm:mt-2 mb-4 flex justify-center">
+        <div class="dashboard-panel">
             {% if profile.snooze_enabled %}
                 {% with status="Paused" %}
-                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
-                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-gray-500 shadow-lg"></span>
-                        <div>
-                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-gray-400">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                    <div class="dashboard-status-card animate-fade-in">
+                        <div class="dashboard-status-row">
+                            <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-gray-500 shadow-lg"></span>
+                            <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-gray-400">{{ status }}</span></div>
                         </div>
+                        <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                     </div>
                 {% endwith %}
             {% elif profile.is_missing %}
                 {% with status="Danger" color="red" %}
-                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
-                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
-                        <div>
-                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                    <div class="dashboard-status-card animate-fade-in">
+                        <div class="dashboard-status-row">
+                            <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse"></span>
+                            <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
                         </div>
+                        <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                     </div>
                 {% endwith %}
             {% elif profile.is_warning %}
                 {% with status="Warning" color="yellow" %}
-                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
-                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg"></span>
-                        <div>
-                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                    <div class="dashboard-status-card animate-fade-in">
+                        <div class="dashboard-status-row">
+                            <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg"></span>
+                            <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
                         </div>
+                        <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                     </div>
                 {% endwith %}
             {% else %}
                 {% with status="Active" color="green" %}
-                    <div class="dashboard-status-card rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 bg-black/60 backdrop-blur-2xl py-4 sm:py-6 flex items-center gap-3 sm:gap-5 animate-fade-in px-3 sm:px-4">
-                        <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg"></span>
-                        <div>
-                            <div class="text-lg sm:text-xl font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
-                            <div id="check-in-time" class="text-xs sm:text-sm text-gray-200">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                    <div class="dashboard-status-card animate-fade-in">
+                        <div class="dashboard-status-row">
+                            <span id="status-dot" class="inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg"></span>
+                            <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
                         </div>
+                        <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
                     </div>
                 {% endwith %}
             {% endif %}
         </div>
         {% endif %}
-        <!-- Quick tip / reminder -->
-        <div class="w-full max-w-md mx-auto mt-2 sm:mt-4 px-4">
-            <div class="rounded-2xl border border-white/8 bg-black/30 backdrop-blur-xl py-3 px-4 flex items-center gap-3">
-                <span class="flex-shrink-0 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </span>
-                <p class="text-xs sm:text-sm text-white/50 leading-snug">Check in regularly to stay Active.</p>
-            </div>
+        <div class="dashboard-trust">
+            <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
         </div>
+    </div>
 </div>
 
 <!-- SOS 10-second countdown modal (sender) -->
-<div id="sos-countdown-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;">
+<div id="sos-countdown-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sos-countdown-title">
     <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-8 py-8 flex flex-col items-center gap-6 max-w-sm w-full animate-pop">
         <div class="text-center">
-            <p class="text-white/90 font-semibold text-lg mb-1">Emergency SOS</p>
+            <p id="sos-countdown-title" class="text-white/90 font-semibold text-lg mb-1">Emergency SOS</p>
             <p class="text-white/60 text-sm">Sending in <span id="sos-countdown-num" class="font-bold text-white">10</span> seconds. Cancel if this was accidental.</p>
         </div>
         <div class="w-20 h-20 rounded-full border-2 border-white/30 bg-white/5 flex items-center justify-center">
@@ -204,9 +182,9 @@
 </div>
 
 <!-- Resolve confirmation modal -->
-<div id="sos-resolve-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;">
+<div id="sos-resolve-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sos-resolve-title">
     <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-6 py-6 max-w-sm w-full animate-pop">
-        <p class="text-white/90 font-semibold mb-2">Mark SOS as resolved?</p>
+        <p id="sos-resolve-title" class="text-white/90 font-semibold mb-2">Mark SOS as resolved?</p>
         <p class="text-white/60 text-sm mb-4 leading-relaxed">If you mark this as resolved: the emergency alert will be closed, and the sender will no longer see this as an active SOS. Only mark resolved when you have confirmed they are safe.</p>
         <div class="flex gap-3">
             <button type="button" id="sos-resolve-cancel" class="flex-1 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium">Cancel</button>
@@ -220,21 +198,134 @@
         const loaderNumber = document.getElementById('loader-number');
         const loaderRing = document.getElementById('loader-ring');
         const loaderSound = document.getElementById('loader-sound');
-        let interval = null;
+        const loaderTick = document.getElementById('loader-tick');
+        const dangerCountdown = document.getElementById('danger-countdown');
+        const dangerCountdownLabel = document.getElementById('danger-countdown-label');
+        const dangerCountdownTime = document.getElementById('danger-countdown-time');
+        const dangerCountdownUnits = document.getElementById('danger-countdown-units');
+        const statusDot = document.getElementById('status-dot');
+        const statusSpan = document.getElementById('status-text');
+        const statusIsPaused = {{ profile.snooze_enabled|yesno:"true,false" }};
+        const dangerWindowMs = {{ danger_hours }} * 60 * 60 * 1000;
+        const warningWindowMs = {{ warning_hours|stringformat:"g" }} * 60 * 60 * 1000;
+        const ringCircumference = 2 * Math.PI * 126;
+        let lastCheckInMs = Date.parse(loaderBtn.dataset.lastCheckIn);
+        if (Number.isNaN(lastCheckInMs)) lastCheckInMs = Date.now();
+        let animationFrame = null;
         let value = 0;
         let animating = false;
+        let countdownPaused = false;
+        let successTimer = null;
+
+        function setRingProgress(fraction) {
+            const progress = Math.max(0, Math.min(1, fraction));
+            loaderRing.style.display = '';
+            loaderRing.style.strokeDashoffset = (1 - progress) * ringCircumference;
+        }
+
+        function updateDangerCountdown(force) {
+            if (countdownPaused && !force) return;
+
+            const remainingMs = Math.max(0, lastCheckInMs + dangerWindowMs - Date.now());
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const display = [hours, minutes, seconds]
+                .map(function(part) { return String(part).padStart(2, '0'); })
+                .join(':');
+
+            dangerCountdownTime.textContent = display;
+            if (!countdownPaused) {
+                setRingProgress(remainingMs / dangerWindowMs);
+            } else {
+                loaderRing.style.strokeDashoffset =
+                    (1 - Math.max(0, Math.min(1, remainingMs / dangerWindowMs))) *
+                    ringCircumference;
+            }
+
+            const dangerReached = remainingMs <= 0;
+            const warningReached = !dangerReached && remainingMs <= warningWindowMs;
+            loaderBtn.classList.remove('countdown-active', 'countdown-warning', 'countdown-danger', 'countdown-paused');
+            if (statusIsPaused) {
+                loaderBtn.classList.add('countdown-paused');
+            } else if (dangerReached) {
+                loaderBtn.classList.add('countdown-danger');
+            } else if (warningReached) {
+                loaderBtn.classList.add('countdown-warning');
+            } else {
+                loaderBtn.classList.add('countdown-active');
+            }
+
+            if (!statusIsPaused && statusDot && statusSpan) {
+                if (dangerReached) {
+                    statusDot.className = 'inline-block w-5 h-5 rounded-full bg-red-500 shadow-lg animate-pulse';
+                    statusSpan.className = 'capitalize text-red-400';
+                    statusSpan.textContent = 'Danger';
+                } else if (warningReached) {
+                    statusDot.className = 'inline-block w-5 h-5 rounded-full bg-yellow-400 shadow-lg';
+                    statusSpan.className = 'capitalize text-yellow-300';
+                    statusSpan.textContent = 'Warning';
+                } else {
+                    statusDot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+                    statusSpan.className = 'capitalize text-green-400';
+                    statusSpan.textContent = 'Active';
+                }
+            }
+
+            if (statusIsPaused) {
+                dangerCountdownLabel.textContent = 'Paused';
+                dangerCountdownUnits.textContent = 'Check-ins paused';
+            } else {
+                dangerCountdownLabel.textContent = dangerReached ? 'Danger status' : (warningReached ? 'Warning' : 'Danger in');
+                dangerCountdownUnits.textContent = dangerReached
+                    ? 'Press and hold to check in'
+                    : 'hr : min : sec';
+            }
+            loaderBtn.setAttribute(
+                'aria-label',
+                statusIsPaused
+                    ? 'Check-ins paused. Remaining window ' + display + '.'
+                    : dangerReached
+                        ? 'Danger status. Press and hold to check in.'
+                        : 'Press and hold to check in. Danger in ' + display + '.'
+            );
+        }
+
+        function showDangerCountdown() {
+            countdownPaused = false;
+            loaderTick.style.display = 'none';
+            loaderNumber.style.display = 'none';
+            dangerCountdown.style.display = 'flex';
+            updateDangerCountdown();
+            if (loaderBtn.classList.contains('is-marking')) {
+                loaderRing.getBoundingClientRect();
+                requestAnimationFrame(function() {
+                    loaderBtn.classList.remove('is-marking');
+                });
+            }
+        }
+
         function setNumber(val) {
             value = val;
-            const tick = document.getElementById('loader-tick');
+            countdownPaused = true;
+            dangerCountdown.style.display = 'none';
+            loaderBtn.classList.remove('countdown-active', 'countdown-warning', 'countdown-danger', 'countdown-paused');
             if (val >= 100) {
+                completed = true;
                 loaderNumber.style.display = 'none';
                 if (loaderRing) loaderRing.style.display = 'none';
-                if (tick) tick.style.display = '';
-                setTimeout(() => {
-                    if (tick) tick.style.display = 'none';
-                    loaderNumber.style.display = '';
-                    setNumber(0);
-                }, 5000);
+                loaderTick.style.display = '';
+                if (successTimer) clearTimeout(successTimer);
+                successTimer = setTimeout(function() {
+                    successTimer = null;
+                    showDangerCountdown();
+                }, 1800);
+
+                const previousCheckInMs = lastCheckInMs;
+                lastCheckInMs = Date.now();
+                loaderBtn.dataset.lastCheckIn = new Date(lastCheckInMs).toISOString();
+                updateDangerCountdown(true);
                 // Update last check-in time (with optional location if sharing enabled)
                 var shareLocation = {{ profile.share_location_with_friends|yesno:"true,false" }};
                 function doCheckIn(lat, lng) {
@@ -247,16 +338,26 @@
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                     if (data.status !== 'success') {
+                        lastCheckInMs = previousCheckInMs;
+                        loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
+                        updateDangerCountdown(true);
                         if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
                         return;
                     }
-                    // Update status card without reload
-                    const dot = document.getElementById('status-dot');
-                    if (dot) {
-                        dot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+                    const serverCheckInMs = Date.parse(data.checked_in_at);
+                    if (!Number.isNaN(serverCheckInMs)) {
+                        lastCheckInMs = serverCheckInMs;
+                        loaderBtn.dataset.lastCheckIn = data.checked_in_at;
                     }
-                    const statusSpan = document.getElementById('status-text');
-                    if (statusSpan) statusSpan.textContent = 'Active';
+                    updateDangerCountdown(true);
+                    // Update status card without reload
+                    if (statusDot) {
+                        statusDot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+                    }
+                    if (statusSpan) {
+                        statusSpan.className = 'capitalize text-green-400';
+                        statusSpan.textContent = 'Active';
+                    }
                     const checkInDiv = document.getElementById('check-in-time');
                     if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
                     // Confirm 100% attendance marked
@@ -271,6 +372,9 @@
                     loaderSound.play();
                 })
                 .catch(function() {
+                    lastCheckInMs = previousCheckInMs;
+                    loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
+                    updateDangerCountdown(true);
                     if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
                 });
                 }
@@ -285,51 +389,58 @@
                 }
                 return;
             } else {
-                if (tick) tick.style.display = 'none';
+                loaderTick.style.display = 'none';
                 loaderNumber.style.display = '';
             }
-            loaderNumber.textContent = Math.round(val);
+            loaderNumber.textContent = val >= 100 ? '100' : Math.floor(val);
             // Animate SVG ring
             if (loaderRing) {
-                // Circumference = 2 * PI * r = 2 * 3.1416 * 126 = ~791.6813
-                const circ = 2 * Math.PI * 126;
                 const percent = Math.max(0, Math.min(1, val / 100));
-                loaderRing.style.strokeDashoffset = (1 - percent) * circ;
-                // Hide only after animation completes
-                if (percent === 0) {
-                    setTimeout(() => {
-                        if (value === 0) loaderRing.style.display = 'none';
-                    }, 180); // match transition duration
-                } else {
-                    loaderRing.style.display = '';
-                }
+                setRingProgress(percent);
             }
         }
+
         function animateTo(target, duration, cb) {
-            if (interval) clearInterval(interval);
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            if (duration <= 0) {
+                setNumber(target);
+                if (cb) cb();
+                return;
+            }
             const start = value;
             const diff = target - start;
-            const steps = Math.round(duration / 16);
-            let current = 0;
-            interval = setInterval(() => {
-                current++;
-                const v = start + diff * (current / steps);
+            const animationStartedAt = performance.now();
+
+            function step(now) {
+                const progress = Math.min((now - animationStartedAt) / duration, 1);
+                const v = start + diff * progress;
                 setNumber(v);
-                if (current >= steps) {
-                    setNumber(target);
-                    clearInterval(interval);
-                    interval = null;
+                if (progress >= 1) {
+                    animationFrame = null;
                     if (cb) cb();
+                    return;
                 }
-            }, 16);
+                animationFrame = requestAnimationFrame(step);
+            }
+
+            animationFrame = requestAnimationFrame(step);
         }
         let holdTimeout = null;
         let startTime = null;
         let completed = false;
-        function startHold() {
+        function startHold(event) {
+            if (event && event.button !== 0) return;
             if (animating) return;
+            if (successTimer) {
+                clearTimeout(successTimer);
+                successTimer = null;
+            }
             completed = false;
             startTime = Date.now();
+            loaderBtn.classList.add('is-marking');
             animateTo(0, 0, () => {
                 animateTo(100, 1000, () => {
                     completed = true;
@@ -339,15 +450,20 @@
         function endHold() {
             if (animating) return;
             if (completed) return;
-            if (interval) clearInterval(interval);
-            animateTo(0, 400);
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            animateTo(0, 250, function() {
+                showDangerCountdown();
+            });
         }
-        loaderBtn.addEventListener('mousedown', startHold);
-        loaderBtn.addEventListener('touchstart', startHold);
-        loaderBtn.addEventListener('mouseup', endHold);
-        loaderBtn.addEventListener('touchend', endHold);
-        loaderBtn.addEventListener('touchcancel', endHold);
-        setNumber(0);
+        loaderBtn.addEventListener('pointerdown', startHold);
+        loaderBtn.addEventListener('pointerup', endHold);
+        loaderBtn.addEventListener('pointerleave', endHold);
+        loaderBtn.addEventListener('pointercancel', endHold);
+        showDangerCountdown();
+        setInterval(updateDangerCountdown, 1000);
         </script>
 
         <!-- SOS: 10s countdown then trigger -->
@@ -722,10 +838,10 @@
         {% if profile and profile.last_check_in %}
             {% if not profile.snooze_enabled %}
             {% if profile.is_missing or profile.is_warning %}
-                <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;">
+                <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;" role="alertdialog" aria-modal="true" aria-labelledby="status-popup-title">
                     <div class="relative bg-black/80 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl px-5 py-6 sm:px-8 sm:py-8 flex flex-col items-center gap-3 sm:gap-4" style="min-width: 260px; max-width: min(90vw, 22rem);">
                         <button onclick="closeStatusPopup()" class="absolute top-3 right-3 text-white/60 hover:text-white/90 text-2xl focus:outline-none">&times;</button>
-                        <div class="text-lg font-semibold text-white/80 mb-2 tracking-wide">
+                        <div id="status-popup-title" class="text-lg font-semibold text-white/80 mb-2 tracking-wide">
                             {% if profile.is_missing %}
                                 <span class="text-red-400">Danger!</span>
                             {% else %}
@@ -734,20 +850,24 @@
                         </div>
                         <div class="text-center text-white/70 text-base leading-relaxed">
                             {% if profile.is_missing %}
-                                You have not checked in for over <b>48 hours</b>.<br>Immediate check-in is required to avoid alerting your friends!
+                                You passed your <b>{{ danger_hours }}-hour</b> connection limit.<br>Check in now; your affected connections may be alerted.
                             {% else %}
-                                You have not checked in for over <b>32 hours</b>.<br>Please check in soon to avoid entering danger status.
+                                Your <b>{{ danger_hours }}-hour</b> connection limit is approaching.<br>Please check in before the countdown reaches danger.
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 <script>
+                const statusPopupKey = 'statusPopupShown:' +
+                    '{{ profile.last_check_in|date:"c" }}:' +
+                    '{% if profile.is_missing %}danger{% else %}warning{% endif %}:' +
+                    '{{ danger_hours }}';
                 function closeStatusPopup() {
                     document.getElementById('status-popup').style.display = 'none';
-                    localStorage.setItem('statusPopupShown', 'true');
+                    localStorage.setItem(statusPopupKey, 'true');
                 }
                 document.addEventListener('DOMContentLoaded', function() {
-                    if (!localStorage.getItem('statusPopupShown')) {
+                    if (!localStorage.getItem(statusPopupKey)) {
                         setTimeout(function() {
                             document.getElementById('status-popup').style.display = 'flex';
                         }, 600);
@@ -757,8 +877,6 @@
             {% endif %}
             {% endif %}
         {% endif %}
-
-</div>
 
 <meta name="csrf-token" content="{{ csrf_token }}">
 
@@ -800,19 +918,6 @@
     animation: pop 0.5s cubic-bezier(.4, 0, .2, 1) both;
 }
 
-@keyframes pulse-glow {
-    0%, 100% {
-        box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-    }
-    50% {
-        box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
-    }
-}
-
-#check-in-btn {
-    animation: pop 0.5s cubic-bezier(.4, 0, .2, 1) both, pulse-glow 2s ease-in-out infinite;
-}
-
 @keyframes sos-pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
     50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
@@ -822,48 +927,4 @@
     border-color: rgba(239,68,68,0.5) !important;
 }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const checkInBtn = document.getElementById('check-in-btn');
-    if (!checkInBtn) return;
-
-    checkInBtn.addEventListener('click', function() {
-        // Disable button during request
-        checkInBtn.disabled = true;
-        checkInBtn.classList.add('opacity-75', 'cursor-not-allowed');
-        
-        fetch('/KyaMainZindaHoon/check-in/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Show success feedback
-                checkInBtn.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Check-in Successful!</span>';
-                checkInBtn.classList.remove('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-                checkInBtn.classList.add('from-green-600', 'to-green-700');
-                
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                alert('Check-in failed. Please try again.');
-                checkInBtn.disabled = false;
-                checkInBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-            checkInBtn.disabled = false;
-            checkInBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-        });
-    });
-});
-</script>
 {% endblock %}

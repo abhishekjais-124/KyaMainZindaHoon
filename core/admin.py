@@ -16,8 +16,15 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserPartnerMappings)
 class UserPartnerMappingsAdmin(admin.ModelAdmin):
-	list_display = ('user', 'partner', 'is_active', 'is_emergency')
-	list_filter = ('is_active', 'is_emergency')
+	list_display = (
+		'user',
+		'partner',
+		'relation_level',
+		'is_active',
+		'is_emergency',
+		'heartbeat_alert_sent',
+	)
+	list_filter = ('relation_level', 'is_active', 'is_emergency', 'heartbeat_alert_sent')
 
 
 @admin.register(SOSAlert)
