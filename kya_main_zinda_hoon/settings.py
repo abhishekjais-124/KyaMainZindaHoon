@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -27,10 +28,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Required in production; a local-only insecure fallback is used when DEBUG=True.
+# Required at runtime in production. Allow an insecure placeholder for local
+# DEBUG and for build-time collectstatic (Render runs collectstatic before
+# the service starts; set SECRET_KEY in the Render Environment for runtime).
+_BUILD_COMMANDS = {'collectstatic', 'makemigrations', 'migrate', 'check'}
+_is_build_command = any(cmd in sys.argv for cmd in _BUILD_COMMANDS)
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    if DEBUG:
+    if DEBUG or _is_build_command:
         SECRET_KEY = 'django-insecure-dev-only-not-for-production'
     else:
         raise ImproperlyConfigured(
