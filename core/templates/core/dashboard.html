@@ -25,7 +25,7 @@
             <p class="text-sm sm:text-base text-white/50 font-medium text-center max-w-xs">Let your trusted circle know you’re okay</p>
         </div>
         <div class="dashboard-checkin relative flex flex-col items-center justify-center w-full">
-            <button id="loader-btn" aria-label="Press and hold to check in" data-last-check-in="{{ profile.last_check_in|date:'c' }}" class="dashboard-loader-btn relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 active:scale-95 group overflow-hidden"
+            <button id="loader-btn" aria-label="Press and hold to check in" data-last-check-in="{{ profile.last_check_in|date:'c' }}" class="dashboard-loader-btn relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 active:scale-95 group overflow-hidden"
                 style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
                 <!-- Animated SVG Ring -->
                 <svg class="absolute inset-0 w-full h-full" width="288" height="288" viewBox="0 0 288 288">
@@ -120,6 +120,7 @@
                             <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-gray-400">{{ status }}</span></div>
                         </div>
                         <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
             {% elif profile.is_missing %}
@@ -130,6 +131,7 @@
                             <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-red-400">{{ status }}</span></div>
                         </div>
                         <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
             {% elif profile.is_warning %}
@@ -140,6 +142,7 @@
                             <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-yellow-300">{{ status }}</span></div>
                         </div>
                         <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
             {% else %}
@@ -150,14 +153,12 @@
                             <div class="text-base sm:text-lg font-bold text-white">Status: <span id="status-text" class="capitalize text-green-400">{{ status }}</span></div>
                         </div>
                         <div id="check-in-time" class="text-xs sm:text-sm text-white/55">Check-in: {{ profile.last_check_in|timesince }} ago</div>
+                        <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
             {% endif %}
         </div>
         {% endif %}
-        <div class="dashboard-trust">
-            <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
-        </div>
     </div>
 </div>
 
@@ -361,7 +362,7 @@
                     const checkInDiv = document.getElementById('check-in-time');
                     if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
                     // Confirm 100% attendance marked
-                    if (typeof showMessagePopup === 'function') showMessagePopup(true, 'Attendance marked · 100%');
+                    if (typeof showMessagePopup === 'function') showMessagePopup(true, (lat != null && lng != null) ? 'Checked in · Location shared' : 'Attendance marked · 100%');
                     // Play sound, then vibrate after sound ends
                     loaderSound.currentTime = 0;
                     const vibrateAfterSound = function() {
@@ -603,9 +604,17 @@
                 container.style.display = 'flex';
                 container.innerHTML = alerts.map(function(a) {
                     var timeStr = formatSosTime(a.created_at);
-                    var locationLine = a.location ? ('<p class="text-xs text-white/50 mt-1"><span class="text-white/60">Last known location:</span> ' + escapeHtml(a.location) + '</p>') : '';
-                    var contactLine = a.from_email ? ('<p class="text-xs text-white/50 mt-0.5">Contact: ' + escapeHtml(a.from_email) + '</p>') : '';
                     var hasCoords = typeof a.lat === 'number' && typeof a.lng === 'number';
+                    var placeText = a.location || (hasCoords ? (Number(a.lat).toFixed(5) + ', ' + Number(a.lng).toFixed(5)) : '');
+                    var updatedText = a.location_updated_at ? ('Updated ' + formatSosTime(a.location_updated_at)) : '';
+                    var locationLine = (placeText || hasCoords) ? (
+                        '<div class="mt-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2.5">' +
+                        '<p class="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300/80">Last known location</p>' +
+                        '<p class="text-sm font-semibold text-white/90 mt-0.5">' + escapeHtml(placeText || 'Location shared') + '</p>' +
+                        (updatedText ? ('<p class="text-[11px] text-white/45 mt-0.5">' + escapeHtml(updatedText) + '</p>') : '') +
+                        '</div>'
+                    ) : '';
+                    var contactLine = a.from_email ? ('<p class="text-xs text-white/50 mt-0.5">Contact: ' + escapeHtml(a.from_email) + '</p>') : '';
                     var latAttr = hasCoords ? (' data-lat="' + a.lat + '"') : '';
                     var lngAttr = hasCoords ? (' data-lng="' + a.lng + '"') : '';
                     var locateBtn = '<button type="button" class="sos-alert-locate py-2 px-4 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-all flex-shrink-0" title="Open in Google Maps"' + latAttr + lngAttr + '>Locate</button>';

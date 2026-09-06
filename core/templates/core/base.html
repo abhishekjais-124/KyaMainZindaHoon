@@ -72,9 +72,11 @@
             50% { opacity: 0.9; transform: scale(1.15); box-shadow: 0 0 6px 1px rgba(253,164,175,0.5); }
         }
         .emergency-mode .mobile-bottom-nav {
-            border-top-color: rgba(251,207,232,0.2) !important;
             background: rgba(30,18,22,0.6) !important;
-            box-shadow: 0 -8px 32px rgba(0,0,0,0.35), 0 -1px 0 rgba(251,207,232,0.08) !important;
+            box-shadow:
+                0 0 0 1px rgba(251,207,232,0.2),
+                0 -8px 32px rgba(0,0,0,0.35),
+                0 1px 0 rgba(251,207,232,0.08) inset !important;
         }
         .emergency-mode .mobile-bottom-nav__icon {
             background: rgba(251,207,232,0.08) !important;

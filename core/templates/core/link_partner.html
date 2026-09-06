@@ -14,7 +14,7 @@ body, html { overflow: auto !important; }
   <div class="link-content w-full max-w-sm flex flex-col gap-5">
 
     {% if messages %}
-    <div class="link-fade-in w-full flex flex-col gap-2">
+    <div id="flash-messages" class="link-fade-in w-full flex flex-col gap-2" role="status">
       {% for message in messages %}
       <div class="px-4 py-2.5 rounded-xl text-center font-semibold text-sm
         {% if message.tags == 'error' %}bg-red-500/20 border border-red-400/30 text-red-300
@@ -24,6 +24,21 @@ body, html { overflow: auto !important; }
       </div>
       {% endfor %}
     </div>
+    <script>
+    (function () {
+      var el = document.getElementById('flash-messages');
+      if (!el) return;
+      setTimeout(function () {
+        el.style.transition = 'opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease, margin 0.35s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-6px)';
+        el.style.maxHeight = '0';
+        el.style.margin = '0';
+        el.style.overflow = 'hidden';
+        setTimeout(function () { el.remove(); }, 380);
+      }, 3500);
+    })();
+    </script>
     {% endif %}
 
     <div class="link-fade-in text-center">

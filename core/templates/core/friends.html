@@ -5,7 +5,45 @@
 {% include 'core/app_icon.html' %}
 
 <style>
-body, html { overflow: auto !important; }
+body, html {
+  overflow: hidden !important;
+  height: 100% !important;
+  overscroll-behavior: none;
+}
+html body.app-body {
+  overflow: hidden !important;
+}
+.friends-page {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing: border-box;
+}
+.friends-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-bottom: 0;
+}
+.friends-content > .friends-fade-in:not(#connections-list-wrap) {
+  flex: 0 0 auto;
+}
+#connections-list-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: 12px;
+}
+#connections-list-wrap ul {
+  padding-bottom: 8px;
+}
 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .friends-fade-in { animation: fade-in 0.4s cubic-bezier(0.4,0,0.2,1) both; }
 .friend-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -13,7 +51,56 @@ body, html { overflow: auto !important; }
 .friend-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
 .modal-backdrop { backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); }
 
-/* Emergency connections edit mode */
+/* Collapsible add-connection card (collapsed by default) */
+.friends-add-card {
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.friends-add-card.is-expanded {
+  border-color: rgba(52, 211, 153, 0.22);
+  background: rgba(0, 0, 0, 0.5);
+}
+.friends-add-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.friends-add-toggle:focus-visible {
+  outline: 2px solid rgba(52, 211, 153, 0.45);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+}
+.friends-add-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.45);
+  transition: transform 0.25s ease;
+}
+.friends-add-card.is-expanded .friends-add-chevron {
+  transform: rotate(180deg);
+}
+.friends-add-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.28s ease, opacity 0.2s ease, margin-top 0.28s ease;
+  margin-top: 0;
+}
+.friends-add-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.friends-add-card.is-expanded .friends-add-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0.75rem;
+}
 .emergency-check-wrap { opacity: 0; width: 0; overflow: hidden; transition: opacity 0.25s ease, width 0.25s ease, margin 0.25s ease; }
 .emergency-edit-mode .emergency-check-wrap { opacity: 1; width: auto; overflow: visible; margin-right: 0.5rem; }
 .friend-avatar { transition: background-color 0.25s ease, border-color 0.25s ease; }
@@ -168,6 +255,162 @@ body, html { overflow: auto !important; }
 @keyframes member-added-burst-10 { to { opacity: 0; transform: translate(92px, -38px) scale(0.3); } }
 @keyframes member-added-burst-11 { to { opacity: 0; transform: translate(92px, 38px) scale(0.3); } }
 @keyframes member-added-burst-12 { to { opacity: 0; transform: translate(38px, 92px) scale(0.3); } }
+
+/* Shared location card */
+.location-shared-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background:
+    radial-gradient(120% 80% at 10% 0%, rgba(52, 211, 153, 0.18), transparent 55%),
+    linear-gradient(160deg, rgba(16, 185, 129, 0.12), rgba(0, 0, 0, 0.45));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.location-shared-card .location-map {
+  position: relative;
+  height: 112px;
+  background:
+    linear-gradient(180deg, rgba(6, 24, 20, 0.15), rgba(0, 0, 0, 0.55)),
+    repeating-linear-gradient(90deg, rgba(52, 211, 153, 0.06) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(52, 211, 153, 0.05) 0 1px, transparent 1px 28px),
+    #0b1512;
+}
+.location-shared-card .location-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.92;
+}
+.location-shared-card .location-pin {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -18px;
+  color: #34d399;
+  filter: drop-shadow(0 4px 10px rgba(16, 185, 129, 0.55));
+  animation: location-pin-bounce 1.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+.location-shared-card .location-pin-ring {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 42px;
+  height: 42px;
+  margin-left: -21px;
+  margin-top: -21px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(52, 211, 153, 0.45);
+  animation: location-ring 1.8s ease-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes location-pin-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes location-ring {
+  0% { transform: scale(0.55); opacity: 0.7; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+.location-shared-card .location-body {
+  padding: 0.85rem 1rem 1rem;
+}
+.location-shared-card .location-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(110, 231, 183, 0.85);
+  margin-bottom: 0.35rem;
+}
+.location-shared-card .location-place {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.3;
+}
+.location-shared-card .location-meta {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+.location-shared-card .location-coords {
+  margin-top: 0.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.38);
+  letter-spacing: 0.02em;
+}
+.location-shared-card .location-actions {
+  margin-top: 0.75rem;
+}
+.location-shared-card .location-map-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(16, 185, 129, 0.16);
+  color: #a7f3d0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.location-shared-card .location-map-btn:hover {
+  background: rgba(16, 185, 129, 0.26);
+  border-color: rgba(52, 211, 153, 0.5);
+}
+.location-shared-card .location-map-btn:active { transform: scale(0.98); }
+.location-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+.sos-location-panel {
+  margin-top: 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(0, 0, 0, 0.35));
+  padding: 0.7rem 0.8rem;
+}
+.sos-location-panel .sos-loc-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(110, 231, 183, 0.8);
+}
+.sos-location-panel .sos-loc-place {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+.sos-location-panel .sos-loc-updated {
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
 </style>
 
 <!-- Member-added success overlay (hidden by default) -->
@@ -187,8 +430,8 @@ body, html { overflow: auto !important; }
   </div>
 </div>
 
-<div class="friends-page w-full min-h-screen flex flex-col items-center px-4 pt-28 pb-32 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="friends-content w-full max-w-sm flex flex-col gap-6">
+<div class="friends-page w-full flex flex-col items-center px-4 pt-24 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="friends-content w-full max-w-sm flex flex-col">
 
     <!-- Page title -->
     <div class="friends-fade-in text-center">
@@ -217,8 +460,18 @@ body, html { overflow: auto !important; }
                 triggered an emergency SOS
               </p>
               <p class="text-xs text-white/50 mt-0.5">{{ alert.created_at|timesince }} ago</p>
-              {% if alert.location %}
-              <p class="text-xs text-white/45 mt-1"><span class="text-white/55">Last known:</span> {{ alert.location }}</p>
+              {% if alert.location or 'lat' in alert %}
+
+              <div class="sos-location-panel">
+
+                <p class="sos-loc-title">Last known location</p>
+
+                <p class="sos-loc-place">{% if alert.location %}{{ alert.location }}{% else %}Coordinates shared{% endif %}</p>
+
+                {% if alert.location_updated_at %}<p class="sos-loc-updated">Updated {{ alert.location_updated_at|timesince }} ago</p>{% endif %}
+
+              </div>
+
               {% endif %}
             </div>
           </div>
@@ -244,20 +497,25 @@ body, html { overflow: auto !important; }
     </div>
     {% endif %}
 
-    <!-- Add connection card -->
+    <!-- Add connection card (collapsed by default) -->
     <div class="friends-add-card friends-fade-in w-full rounded-2xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-xl p-4" style="animation-delay: 0.05s;">
-      <div class="flex items-center gap-2 mb-3">
+      <button type="button" id="friends-add-toggle" class="friends-add-toggle" aria-expanded="false" aria-controls="friends-add-body">
         <span class="flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 border border-white/10">
           <svg class="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
         </span>
         <span class="text-sm font-semibold text-white/90">Add a connection</span>
+        <svg class="friends-add-chevron w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="friends-add-body" class="friends-add-body" hidden>
+        <div class="friends-add-body-inner">
+          <form id="invite-form" class="flex flex-row w-full min-w-0 items-center gap-2">
+            {% csrf_token %}
+            <input name="invite_code" type="text" maxlength="5" placeholder="Enter invite code" class="min-w-0 flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white text-center placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/40 focus:border-green-400/30 transition-all duration-200 font-mono text-sm tracking-widest" autocomplete="off" required />
+            <button type="submit" class="flex-shrink-0 px-5 py-3 rounded-xl bg-black/40 backdrop-blur-xl border border-white/20 text-white font-semibold shadow-lg hover:bg-black/50 hover:border-white/30 transition-all duration-200 whitespace-nowrap active:scale-98">Add</button>
+          </form>
+          <p class="text-xs text-white/40 mt-2">Ask your friend for their invite code.</p>
+        </div>
       </div>
-      <form id="invite-form" class="flex flex-row w-full min-w-0 items-center gap-2">
-        {% csrf_token %}
-        <input name="invite_code" type="text" maxlength="5" placeholder="Enter invite code" class="min-w-0 flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white text-center placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/40 focus:border-green-400/30 transition-all duration-200 font-mono text-sm tracking-widest" autocomplete="off" required />
-        <button type="submit" class="flex-shrink-0 px-5 py-3 rounded-xl bg-black/40 backdrop-blur-xl border border-white/20 text-white font-semibold shadow-lg hover:bg-black/50 hover:border-white/30 transition-all duration-200 whitespace-nowrap active:scale-98">Add</button>
-      </form>
-      <p class="text-xs text-white/40 mt-2">Ask your friend for their invite code.</p>
     </div>
 
     <!-- Summary + emergency toolbar -->
@@ -271,7 +529,7 @@ body, html { overflow: auto !important; }
       {% if connections %}
       <button type="button" id="btn-emergency-update" class="btn-emergency-update">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-        <span id="btn-emergency-label">Update emergency</span>
+        <span id="btn-emergency-label">Emergency</span>
       </button>
       {% endif %}
     </div>
@@ -283,7 +541,7 @@ body, html { overflow: auto !important; }
       {% if connections %}
       <ul class="w-full flex flex-col gap-3">
         {% for conn in connections %}
-          {% with friend=conn.user friend_profile=friend.profile is_emergency=conn.is_emergency %}
+          {% with friend=conn.user friend_profile=conn.profile is_emergency=conn.is_emergency %}
           <li class="friend-card w-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-3.5 flex items-center gap-4 shadow-lg cursor-pointer friend-item group"
               data-mapping-id="{{ conn.mapping_id }}"
               data-name="{{ friend.get_full_name|default:friend.username|default:friend.email|default:'Unknown' }}"
@@ -293,10 +551,9 @@ body, html { overflow: auto !important; }
               data-relation-label="{{ conn.relation_label }}"
               data-danger-hours="{{ conn.danger_hours }}"
               data-warning-hours="{{ conn.warning_hours|stringformat:'g' }}"
-              data-joined="{{ friend.date_joined|date:'d M Y, g:i A' }}"
               data-last-login="{% if friend.last_login %}{{ friend.last_login|date:'d M Y, g:i A' }}{% else %}—{% endif %}"
-              data-last-checkin="{% if friend_profile.last_check_in %}{{ friend_profile.last_check_in|timesince }} ago{% else %}—{% endif %}"
-              {% if friend_profile.share_location_with_friends and friend_profile.last_latitude is not None and friend_profile.last_longitude is not None %}data-lat="{{ friend_profile.last_latitude }}" data-lng="{{ friend_profile.last_longitude }}" data-location-updated="{{ friend_profile.location_updated_at|timesince }} ago"{% if friend_profile.last_city %} data-city="{{ friend_profile.last_city }}"{% endif %}{% if friend_profile.last_state %} data-state="{{ friend_profile.last_state }}"{% endif %}{% endif %}>
+              data-last-checkin="{% if conn.last_check_in %}{{ conn.last_check_in|date:'d M Y, g:i A' }}{% else %}—{% endif %}"
+              {% if friend_profile.share_location_with_friends and friend_profile.last_latitude is not None and friend_profile.last_longitude is not None %}data-lat="{{ friend_profile.last_latitude }}" data-lng="{{ friend_profile.last_longitude }}"{% if friend_profile.location_updated_at %} data-location-updated="{{ friend_profile.location_updated_at|timesince }}"{% endif %}{% if friend_profile.last_city %} data-city="{{ friend_profile.last_city }}"{% endif %}{% if friend_profile.last_state %} data-state="{{ friend_profile.last_state }}"{% endif %}{% endif %}>
             <!-- Emergency checkbox (visible only in edit mode) -->
             <div class="emergency-check-wrap flex-shrink-0">
               <label class="flex items-center cursor-pointer">
@@ -313,6 +570,11 @@ body, html { overflow: auto !important; }
               <p class="relation-summary text-[11px] text-emerald-300/70 truncate mt-0.5">{{ conn.relation_label }} · {{ conn.danger_hours }}h limit</p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
+              {% if friend_profile.share_location_with_friends and friend_profile.last_latitude is not None and friend_profile.last_longitude is not None %}
+              <span class="location-chip" title="Location shared" aria-label="Location shared">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </span>
+              {% endif %}
               {% if friend_profile.snooze_enabled %}
                 <span class="text-xs px-2.5 py-1 rounded-full bg-gray-500/25 text-gray-300 font-medium">Paused</span>
               {% elif conn.is_missing %}
@@ -364,13 +626,6 @@ body, html { overflow: auto !important; }
       <div class="rounded-2xl overflow-hidden border border-white/10 bg-black/40">
         <div class="flex justify-between items-center py-3 px-4">
           <span class="text-white/50 text-sm font-medium flex items-center gap-2">
-            <svg class="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Joined
-          </span>
-          <span id="modal-joined" class="text-white/90 text-sm font-medium"></span>
-        </div>
-        <div class="flex justify-between items-center py-3 px-4">
-          <span class="text-white/50 text-sm font-medium flex items-center gap-2">
             <svg class="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
             Last login
           </span>
@@ -383,16 +638,29 @@ body, html { overflow: auto !important; }
           </span>
           <span id="modal-last-checkin" class="text-white/90 text-sm font-medium"></span>
         </div>
-        <div id="modal-location-row" class="hidden flex-col gap-2 py-3 px-4">
-          <div class="flex justify-between items-center">
-            <span class="text-white/50 text-sm font-medium flex items-center gap-2">
-              <svg class="w-4 h-4 text-green-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              Location
-            </span>
-            <a id="modal-location-link" href="#" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:text-green-300 text-sm font-semibold transition-colors">View on map</a>
+      </div>
+      <div id="modal-location-row" class="hidden">
+        <div class="location-shared-card">
+          <div class="location-map">
+            <img id="modal-location-map" alt="" loading="lazy" referrerpolicy="no-referrer" />
+            <span class="location-pin-ring" aria-hidden="true"></span>
+            <svg class="location-pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>
           </div>
-          <p id="modal-location-place" class="text-white/80 text-sm"></p>
-          <p id="modal-location-updated" class="text-white/45 text-xs"></p>
+          <div class="location-body">
+            <p class="location-label">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Shared location
+            </p>
+            <p id="modal-location-place" class="location-place"></p>
+            <p id="modal-location-coords" class="location-coords"></p>
+            <p id="modal-location-updated" class="location-meta"></p>
+            <div class="location-actions">
+              <a id="modal-location-link" href="#" target="_blank" rel="noopener noreferrer" class="location-map-btn">
+                Open in Maps
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       <div>
@@ -439,7 +707,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const nameEl = document.getElementById('modal-name');
   const emailEl = document.getElementById('modal-email');
   const avatarEl = document.getElementById('modal-avatar');
-  const joinedEl = document.getElementById('modal-joined');
   const lastLoginEl = document.getElementById('modal-last-login');
   const lastCheckinEl = document.getElementById('modal-last-checkin');
   const modalDeleteBtn = document.getElementById('modal-delete-btn');
@@ -513,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (data.success) {
             listWrap.classList.remove('emergency-edit-mode');
             btnEmergency.classList.remove('save-mode');
-            btnLabel.textContent = 'Update emergency';
+            btnLabel.textContent = 'Emergency';
             // Update badges without full reload: show Emergency only where checked
             listWrap.querySelectorAll('.friend-item').forEach(function(li) {
               var email = li.getAttribute('data-email');
@@ -562,7 +829,6 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         avatarEl.classList.add('border-white/20', 'bg-white/10');
       }
-      joinedEl.textContent = item.getAttribute('data-joined');
       lastLoginEl.textContent = item.getAttribute('data-last-login');
       lastCheckinEl.textContent = item.getAttribute('data-last-checkin') || '—';
       currentEmail = email;
@@ -592,20 +858,47 @@ document.addEventListener('DOMContentLoaded', function() {
       var locationLink = document.getElementById('modal-location-link');
       var locationPlace = document.getElementById('modal-location-place');
       var locationUpdated = document.getElementById('modal-location-updated');
+      var locationCoords = document.getElementById('modal-location-coords');
+      var locationMap = document.getElementById('modal-location-map');
       if (lat && lng) {
         locationRow.classList.remove('hidden');
-        locationRow.classList.add('flex');
-        locationLink.href = 'https://www.google.com/maps?q=' + encodeURIComponent(lat) + ',' + encodeURIComponent(lng);
+        var mapsUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(lat) + ',' + encodeURIComponent(lng);
+        locationLink.href = mapsUrl;
         var parts = [];
         if (city) parts.push(city);
         if (state) parts.push(state);
-        locationPlace.textContent = parts.length ? parts.join(', ') : 'Shared';
-        locationPlace.style.display = 'block';
+        locationPlace.textContent = parts.length ? parts.join(', ') : 'Approximate location shared';
+        var latNum = Number(lat);
+        var lngNum = Number(lng);
+        locationCoords.textContent = (Number.isFinite(latNum) && Number.isFinite(lngNum))
+          ? (latNum.toFixed(5) + ', ' + lngNum.toFixed(5))
+          : (lat + ', ' + lng);
         var updated = item.getAttribute('data-location-updated');
-        locationUpdated.textContent = updated ? 'Updated ' + updated : '';
+        locationUpdated.textContent = updated ? ('Updated ' + updated + ' ago') : 'Live shared location';
+        if (locationMap) {
+          var delta = 0.02;
+          var left = lngNum - delta;
+          var right = lngNum + delta;
+          var top = latNum + delta * 0.7;
+          var bottom = latNum - delta * 0.7;
+          // Prefer OSM static preview; fall back to decorative grid if image fails
+          locationMap.onerror = function() {
+            locationMap.style.display = 'none';
+            locationMap.onerror = null;
+          };
+          locationMap.style.display = 'block';
+          locationMap.src = 'https://staticmap.openstreetmap.de/staticmap.php?center=' +
+            encodeURIComponent(latNum + ',' + lngNum) +
+            '&zoom=14&size=560x224&maptype=mapnik&markers=' +
+            encodeURIComponent(latNum + ',' + lngNum + ',red-pushpin');
+          locationMap.alt = parts.length ? ('Map of ' + parts.join(', ')) : 'Shared location map';
+        }
       } else {
         locationRow.classList.add('hidden');
-        locationRow.classList.remove('flex');
+        if (locationMap) {
+          locationMap.removeAttribute('src');
+          locationMap.alt = '';
+        }
       }
       modalDeleteBtn.style.display = 'flex';
       modal.classList.remove('hidden');
@@ -681,6 +974,37 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+(function() {
+  var card = document.querySelector('.friends-add-card');
+  var toggle = document.getElementById('friends-add-toggle');
+  var body = document.getElementById('friends-add-body');
+  var inviteInput = document.querySelector('#invite-form input[name="invite_code"]');
+  if (!card || !toggle || !body) return;
+
+  function setExpanded(expanded) {
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (expanded) {
+      body.hidden = false;
+      // Next frame so grid collapse→expand animates
+      requestAnimationFrame(function() {
+        card.classList.add('is-expanded');
+        if (inviteInput) {
+          setTimeout(function() { inviteInput.focus(); }, 200);
+        }
+      });
+    } else {
+      card.classList.remove('is-expanded');
+      setTimeout(function() {
+        if (!card.classList.contains('is-expanded')) body.hidden = true;
+      }, 280);
+    }
+  }
+
+  toggle.addEventListener('click', function() {
+    setExpanded(!card.classList.contains('is-expanded'));
+  });
+})();
+
 document.getElementById('invite-form').addEventListener('submit', function(e) {
   e.preventDefault();
   var form = this;

@@ -89,11 +89,18 @@ def friends_view(request):
 
     # Build connections list with emergency flag
     connections = []
-    active_mappings = UserPartnerMappings.objects.filter(user=profile, is_active=True)
+    active_mappings = (
+        UserPartnerMappings.objects
+        .filter(user=profile, is_active=True)
+        .select_related('partner', 'partner__user')
+    )
     for mapping in active_mappings:
+        partner_profile = mapping.partner
+        partner_user = partner_profile.user
         connections.append({
             'mapping_id': mapping.id,
-            'user': mapping.partner.user,
+            'user': partner_user,
+            'profile': partner_profile,
             'is_emergency': mapping.is_emergency,
             'relation_level': mapping.relation_level,
             'relation_label': mapping.relation_label,
@@ -101,6 +108,7 @@ def friends_view(request):
             'warning_hours': mapping.warning_hours,
             'is_missing': mapping.is_missing(),
             'is_warning': mapping.is_warning(),
+            'last_check_in': partner_profile.last_check_in,
         })
 
     # Active SOS alerts received by this user (for "who triggered SOS" on friends page)
@@ -116,17 +124,22 @@ def friends_view(request):
     active_sos_alerts = []
     for a in active_sos:
         from_profile = a.from_user
+        place = _location_str(from_profile)
         item = {
             'id': a.id,
             'from_name': _display_name(from_profile.user),
             'from_username': from_profile.user.username,
             'from_email': from_profile.user.email,
             'created_at': a.created_at,
-            'location': _location_str(from_profile),
+            'location': place,
         }
         if from_profile.share_location_in_sos and from_profile.last_latitude is not None and from_profile.last_longitude is not None:
             item['lat'] = from_profile.last_latitude
             item['lng'] = from_profile.last_longitude
+            if not place:
+                item['location'] = f"{from_profile.last_latitude:.5f}, {from_profile.last_longitude:.5f}"
+            if from_profile.location_updated_at:
+                item['location_updated_at'] = from_profile.location_updated_at
         active_sos_alerts.append(item)
 
     return render(request, 'core/friends.html', {
@@ -471,6 +484,8 @@ def sos_list(request):
         if from_profile.share_location_in_sos and from_profile.last_latitude is not None and from_profile.last_longitude is not None:
             item['lat'] = from_profile.last_latitude
             item['lng'] = from_profile.last_longitude
+            if not item['location']:
+                item['location'] = f"{from_profile.last_latitude:.5f}, {from_profile.last_longitude:.5f}"
         data.append(item)
     return JsonResponse({'alerts': data})
 

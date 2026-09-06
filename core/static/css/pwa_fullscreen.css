@@ -5,13 +5,10 @@ body {
   min-height: 100dvh;
   min-width: 100vw;
   background: #080c12;
-  /* Safe area insets so content isn't under notch or home indicator */
+  /* Only top/side safe areas here. Bottom is handled by the floating nav
+     offset in premium.css — body padding-bottom creates a black strip. */
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-}
-/* Bottom nav above home indicator when in fullscreen */
-.mobile-bottom-nav {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding-bottom: 0;
 }
