@@ -119,17 +119,20 @@ class Profile(models.Model):
     @property
     def danger_hours(self):
         """Use the shortest active connection window for this user's timer."""
+        if hasattr(self, '_danger_hours_cache'):
+            return self._danger_hours_cache
         relation_levels = UserPartnerMappings.objects.filter(
             user=self,
             is_active=True,
         ).values_list('relation_level', flat=True)
-        return min(
+        self._danger_hours_cache = min(
             (
                 UserPartnerMappings.danger_hours_for_level(level)
                 for level in relation_levels
             ),
             default=48,
         )
+        return self._danger_hours_cache
 
     @property
     def warning_hours(self):
@@ -166,6 +169,16 @@ class UserPartnerMappings(models.Model):
             models.UniqueConstraint(
                 fields=['user', 'partner'],
                 name='unique_user_partner_mapping',
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=['user', 'is_active'],
+                name='core_mapping_user_active_idx',
+            ),
+            models.Index(
+                fields=['user', 'is_active', 'is_emergency'],
+                name='core_mapping_emergency_idx',
             ),
         ]
 
@@ -223,6 +236,16 @@ class SOSAlert(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(
+                fields=['from_user', 'status'],
+                name='core_sos_from_status_idx',
+            ),
+            models.Index(
+                fields=['to_user', 'status'],
+                name='core_sos_to_status_idx',
+            ),
+        ]
 
     def __str__(self):
         return f"SOS {self.from_user.user.email} → {self.to_user.user.email} ({self.status})"

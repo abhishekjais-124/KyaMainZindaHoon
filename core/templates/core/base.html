@@ -15,7 +15,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/icon-512x512.png' %}">
     <link rel="apple-touch-icon" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
     <link rel="apple-touch-icon" sizes="512x512" href="{% static 'icons/icon-512x512.png' %}">
-    <link rel="stylesheet" href="{% static 'css/pwa_fullscreen.css' %}?v=20260907-9">
+    <link rel="stylesheet" href="{% static 'css/pwa_fullscreen.css' %}?v=20260908-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,19 +23,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     {% endif %}
     <title>{% block title %}Am I Ok?{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {},
-            },
-        }
-    </script>
-    <link rel="stylesheet" href="{% static 'css/mobile_bottom_nav.css' %}?v=20260907-9">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=20260908-2">
+    <link rel="stylesheet" href="{% static 'css/mobile_bottom_nav.css' %}?v=20260908-1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {% block extra_head %}{% endblock %}
     {% block dashboard_noscroll %}{% endblock %}
-    <link rel="stylesheet" href="{% static 'css/premium.css' %}?v=20260907-9">
+    <link rel="stylesheet" href="{% static 'css/premium.css' %}?v=20260908-2">
 </head>
 <body class="app-body min-h-screen text-white transition-[background-image] duration-500 {% if emergency_sos_active %}emergency-body{% endif %}" id="body-root">
     {% if emergency_sos_active %}
@@ -96,14 +89,29 @@
             {% block content %}{% endblock %}
         </main>
     <script>
+      let loaderTimer = null;
+
       function showLoader() {
+          if (loaderTimer) {
+              clearTimeout(loaderTimer);
+              loaderTimer = null;
+          }
           const loader = document.getElementById('funny-loading');
           if (!loader) return;
           loader.classList.add('is-visible');
           loader.setAttribute('aria-hidden', 'false');
       }
 
+      function scheduleLoader() {
+          if (loaderTimer) clearTimeout(loaderTimer);
+          loaderTimer = setTimeout(showLoader, 180);
+      }
+
       function hideLoader() {
+          if (loaderTimer) {
+              clearTimeout(loaderTimer);
+              loaderTimer = null;
+          }
           const loader = document.getElementById('funny-loading');
           if (!loader) return;
           loader.classList.remove('is-visible');
@@ -128,19 +136,18 @@
               destination.search === window.location.search;
           if (sameDocument && destination.hash) return;
 
-          showLoader();
+          scheduleLoader();
       });
 
       document.addEventListener('submit', function(event) {
           const form = event.target;
           if ((form.target && form.target.toLowerCase() !== '_self') ||
               form.dataset.noLoader !== undefined) return;
-          showLoader();
+          scheduleLoader();
       });
 
       document.addEventListener('DOMContentLoaded', hideLoader);
       window.addEventListener('pageshow', hideLoader);
-      window.addEventListener('beforeunload', showLoader);
 
       // Register service worker for PWA
       if ('serviceWorker' in navigator) {
@@ -210,6 +217,26 @@ function showInviteCodePopup() {
             }
         });
 }
+
+(function() {
+    function isEditableTarget(target) {
+        if (!target || !target.closest) return false;
+        return !!target.closest('input, textarea, [contenteditable="true"]');
+    }
+
+    document.addEventListener('selectstart', function(event) {
+        if (!isEditableTarget(event.target)) event.preventDefault();
+    }, { capture: true });
+
+    document.addEventListener('selectionchange', function() {
+        var selection = window.getSelection && window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+        var anchor = selection.anchorNode;
+        var node = anchor && (anchor.nodeType === 1 ? anchor : anchor.parentElement);
+        if (isEditableTarget(node)) return;
+        selection.removeAllRanges();
+    });
+})();
 </script>
 </body>
 </html>

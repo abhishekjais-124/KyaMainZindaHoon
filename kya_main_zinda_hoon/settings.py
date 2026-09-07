@@ -119,11 +119,19 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': _sqlite_name,
+        'CONN_MAX_AGE': 60,
     }
 }
 
-# Sessions in the same SQLite DB so logins persist across server restarts/deploys
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+# Keep durable sessions in SQLite while serving repeat reads from memory.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'kmzh-default',
+        'OPTIONS': {'MAX_ENTRIES': 1000},
+    }
+}
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 
 # Password validation
@@ -163,11 +171,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 STATIC_URL = '/KyaMainZindaHoon/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'core' / 'static',
-    BASE_DIR / 'dark' / 'static',
-]
 
 # WhiteNoise settings
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

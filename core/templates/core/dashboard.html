@@ -4,15 +4,6 @@
 {% endblock %}
 {% load static %}
 
-<style>
-    .dashboard-no-select, .dashboard-no-select * {
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        -moz-user-select: none !important;
-        -ms-user-select: none !important;
-        -webkit-touch-callout: none !important;
-    }
-</style>
 {% block content %}
 {% include 'core/app_icon.html' %}
 <button type="button" id="home-info-trigger" class="home-info-trigger" aria-label="Learn how to use the app" aria-haspopup="dialog" aria-controls="home-info-modal" aria-expanded="false">
@@ -22,19 +13,19 @@
         <circle cx="12" cy="7.8" r="1" fill="currentColor"/>
     </svg>
 </button>
-<div class="dashboard-no-select dashboard-main w-full flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800">
+<div class="dashboard-main w-full flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800{% if not has_connections %} is-disabled{% endif %}">
     <div class="dashboard-stack flex flex-col items-center w-full">
         <div class="dashboard-header w-full flex flex-col items-center gap-2">
             <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70">Private check-in</p>
             <span class="dashboard-title block font-extrabold tracking-tight text-white/90">
                 Am I Ok?
             </span>
-            <p class="text-sm sm:text-base text-white/50 font-medium text-center max-w-xs">Let your trusted circle know you’re okay</p>
+            <p class="text-sm sm:text-base text-white/50 font-medium text-center max-w-xs">{% if has_connections %}Let your trusted circle know you’re okay{% else %}Add a connection to unlock check-in{% endif %}</p>
         </div>
         <div class="dashboard-checkin relative flex flex-col items-center justify-center w-full">
             <div class="dashboard-loader-wrap">
-            <button id="loader-btn" aria-label="Press and hold to check in" data-last-check-in="{{ profile.last_check_in|date:'c' }}" class="dashboard-loader-btn relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300 active:scale-95 group overflow-hidden"
-                style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);">
+            <button id="loader-btn" aria-label="{% if has_connections %}Press and hold to check in{% else %}Check-in locked until you add a connection{% endif %}" data-last-check-in="{{ profile.last_check_in|date:'c' }}" data-has-connections="{% if has_connections %}true{% else %}false{% endif %}" class="dashboard-loader-btn relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center rounded-full border-2 border-white/20 bg-black/40 shadow-2xl backdrop-blur-2xl transition-all duration-300{% if has_connections %} active:scale-95{% endif %} group overflow-hidden{% if not has_connections %} is-locked{% endif %}"
+                style="box-shadow: 0 16px 64px 0 rgba(0,0,0,0.28);"{% if not has_connections %} disabled aria-disabled="true"{% endif %}>
                 <!-- Animated SVG Ring -->
                 <svg class="absolute inset-0 w-full h-full" width="288" height="288" viewBox="0 0 288 288">
                     <circle cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" opacity="0.10" />
@@ -91,8 +82,8 @@
                     Tap and hold to check in
                 </div>
             </div>
-            <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}"></audio>
-            <p class="dashboard-hint text-xs sm:text-sm text-center">Press and hold to check in</p>
+            <audio id="loader-sound" src="{% static 'sounds/checkin_sound.wav' %}" preload="none"></audio>
+            <p class="dashboard-hint text-xs sm:text-sm text-center">{% if has_connections %}Press and hold to check in{% else %}Locked until you add a connection{% endif %}</p>
             <!-- SOS Emergency button (red + disabled when active SOS; gray + disabled when no contacts; else enabled) -->
             <div class="relative inline-block group/sos">
                 <button type="button" id="sos-trigger-btn" class="sos-trigger-btn px-5 py-2.5 rounded-2xl border backdrop-blur-2xl font-semibold text-sm tracking-wide shadow-xl transition-all duration-300 touch-manipulation {% if has_active_sos_sent %}bg-red-500/80 border-red-400/60 text-white cursor-not-allowed hover:scale-100 active:scale-100{% elif not has_emergency_contacts %}border border-white/20 bg-black/40 text-white/90 opacity-50 cursor-not-allowed hover:scale-100 hover:bg-black/40 hover:border-white/20 active:scale-100 active:bg-black/40 active:border-white/20{% else %}border border-white/20 bg-black/40 text-white/90 hover:scale-125 hover:bg-red-500/80 hover:border-red-400/50 hover:text-white active:scale-125 active:bg-red-500/80 active:border-red-400/50 active:text-white{% endif %}"
@@ -101,7 +92,7 @@
                     SOS — Emergency
                 </button>
                 <div id="sos-tooltip" class="sos-tooltip absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-4 py-2.5 rounded-xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl text-center pointer-events-none opacity-0 invisible translate-y-1.5 transition-all duration-200 ease-out group-hover/sos:opacity-100 group-hover/sos:visible group-hover/sos:translate-y-0 whitespace-nowrap" style="{% if has_emergency_contacts and not has_active_sos_sent %}display:none;{% endif %}">
-                    <span id="sos-tooltip-text" class="text-xs font-medium text-white/90 tracking-wide">{% if has_active_sos_sent %}You have an active SOS. Wait for someone to resolve it.{% else %}Add emergency contacts{% endif %}</span>
+                    <span id="sos-tooltip-text" class="text-xs font-medium text-white/90 tracking-wide">{% if has_active_sos_sent %}You have an active SOS. Wait for someone to resolve it.{% elif not has_connections %}Add a connection first{% else %}Add emergency contacts{% endif %}</span>
                     <span class="sos-tooltip-arrow absolute left-1/2 -translate-x-1/2 top-full mt-px w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-black/70"></span>
                 </div>
             </div>
@@ -122,7 +113,19 @@
         </div>
         {% endif %}
 
-        {% if profile and profile.last_check_in %}
+        {% if not has_connections %}
+        <div class="dashboard-panel">
+            <div class="dashboard-empty-banner" role="status">
+                <p class="dashboard-empty-banner__title">No connections yet</p>
+                <p class="dashboard-empty-banner__text">Invite someone you trust to start sharing your status.</p>
+                <button type="button" class="dashboard-empty-banner__cta" onclick="showInviteCodePopup()">
+                    Invite a connection
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if has_connections and profile and profile.last_check_in %}
         <div class="dashboard-panel">
             {% if profile.snooze_enabled %}
                 {% with status="Paused" %}
@@ -135,7 +138,7 @@
                         <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
-            {% elif profile.is_missing %}
+            {% elif is_missing %}
                 {% with status="Danger" color="red" %}
                     <div class="dashboard-status-card animate-fade-in">
                         <div class="dashboard-status-row">
@@ -146,7 +149,7 @@
                         <p class="dashboard-trust-text">Your check-in is shared only with your trusted circle.</p>
                     </div>
                 {% endwith %}
-            {% elif profile.is_warning %}
+            {% elif is_warning %}
                 {% with status="Warning" color="yellow" %}
                     <div class="dashboard-status-card animate-fade-in">
                         <div class="dashboard-status-row">
@@ -312,6 +315,7 @@
         const statusSpan = document.getElementById('status-text');
         const checkinGuidance = document.getElementById('checkin-guidance');
         const statusIsPaused = {{ profile.snooze_enabled|yesno:"true,false" }};
+        const hasConnections = {{ has_connections|yesno:"true,false" }};
         const dangerWindowMs = {{ danger_hours }} * 60 * 60 * 1000;
         const warningWindowMs = {{ warning_hours|stringformat:"g" }} * 60 * 60 * 1000;
         const ringCircumference = 2 * Math.PI * 126;
@@ -339,7 +343,7 @@
 
         function showCheckinGuidance() {
             guidanceTimer = null;
-            if (guidanceHasShown || document.hidden || animating) return;
+            if (!hasConnections || guidanceHasShown || document.hidden || animating) return;
             guidanceHasShown = true;
             loaderBtn.classList.add('is-guided');
             if (checkinGuidance) {
@@ -349,12 +353,13 @@
         }
 
         function scheduleCheckinGuidance() {
-            if (guidanceHasShown) return;
+            if (!hasConnections || guidanceHasShown) return;
             if (guidanceTimer) clearTimeout(guidanceTimer);
             guidanceTimer = setTimeout(showCheckinGuidance, 10000);
         }
 
         function noteUserActivity() {
+            if (!hasConnections) return;
             if (guidanceHasShown) {
                 hideCheckinGuidance();
             } else {
@@ -580,9 +585,17 @@
         let holdTimeout = null;
         let startTime = null;
         let completed = false;
+        function clearUiSelection() {
+            var selection = window.getSelection && window.getSelection();
+            if (selection && selection.removeAllRanges) selection.removeAllRanges();
+        }
         function startHold(event) {
+            if (!hasConnections || loaderBtn.disabled) return;
             if (event && event.button !== 0) return;
             if (animating) return;
+            // Stop iOS/Android from treating the hold as text/block selection.
+            if (event && event.cancelable) event.preventDefault();
+            clearUiSelection();
             hideCheckinGuidance();
             if (successTimer) {
                 clearTimeout(successTimer);
@@ -598,6 +611,7 @@
             });
         }
         function endHold() {
+            clearUiSelection();
             if (animating) return;
             if (completed) return;
             if (animationFrame) {
@@ -612,6 +626,12 @@
         loaderBtn.addEventListener('pointerup', endHold);
         loaderBtn.addEventListener('pointerleave', endHold);
         loaderBtn.addEventListener('pointercancel', endHold);
+        loaderBtn.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+        loaderBtn.addEventListener('selectstart', function(event) {
+            event.preventDefault();
+        });
         document.addEventListener('pointerdown', noteUserActivity, { passive: true });
         document.addEventListener('keydown', noteUserActivity);
         document.addEventListener('visibilitychange', function() {
@@ -623,8 +643,17 @@
             }
         });
         showDangerCountdown();
-        scheduleCheckinGuidance();
-        setInterval(updateDangerCountdown, 1000);
+        if (hasConnections) {
+            scheduleCheckinGuidance();
+            setInterval(updateDangerCountdown, 1000);
+        } else {
+            loaderBtn.classList.remove('countdown-active', 'countdown-warning', 'countdown-danger', 'countdown-paused');
+            loaderBtn.classList.add('is-locked');
+            if (dangerCountdownLabel) dangerCountdownLabel.textContent = 'Locked';
+            if (dangerCountdownTime) dangerCountdownTime.textContent = '--:--:--';
+            if (dangerCountdownUnits) dangerCountdownUnits.textContent = 'add a connection';
+            setRingProgress(0);
+        }
         </script>
 
         <!-- SOS: 10s countdown then trigger -->
@@ -733,7 +762,6 @@
                     .catch(function() {});
             }
 
-            updateSosButtonState();
             document.addEventListener('visibilitychange', function() {
                 if (document.visibilityState === 'visible') updateSosButtonState();
             });
@@ -748,7 +776,7 @@
             var resolveCancelBtn = document.getElementById('sos-resolve-cancel');
             var resolveConfirmBtn = document.getElementById('sos-resolve-confirm');
             var resolveAlertId = null;
-            var pollInterval = 15000;
+            var pollInterval = 30000;
 
             function csrfHeader() {
                 var meta = document.querySelector('meta[name="csrf-token"]');
@@ -894,7 +922,9 @@
             });
 
             fetchAlerts();
-            setInterval(fetchAlerts, pollInterval);
+            setInterval(function() {
+                if (document.visibilityState === 'visible') fetchAlerts();
+            }, pollInterval);
         })();
         </script>
 
@@ -999,26 +1029,30 @@
                 if (document.visibilityState === 'visible') checkResolvedNotifications();
             });
             // Poll so triggerer sees resolved alert without refreshing (e.g. dashboard already open)
-            setInterval(checkResolvedNotifications, 15000);
+            setInterval(function() {
+                if (document.visibilityState === 'visible') {
+                    checkResolvedNotifications();
+                }
+            }, 30000);
         })();
         </script>
 
         <!-- Status Popup (Warning/Danger) - only when not snoozed -->
-        {% if profile and profile.last_check_in %}
+        {% if has_connections and profile and profile.last_check_in %}
             {% if not profile.snooze_enabled %}
-            {% if profile.is_missing or profile.is_warning %}
+            {% if is_missing or is_warning %}
                 <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;" role="alertdialog" aria-modal="true" aria-labelledby="status-popup-title">
                     <div class="relative bg-black/80 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl px-5 py-6 sm:px-8 sm:py-8 flex flex-col items-center gap-3 sm:gap-4" style="min-width: 260px; max-width: min(90vw, 22rem);">
                         <button onclick="closeStatusPopup()" class="absolute top-3 right-3 text-white/60 hover:text-white/90 text-2xl focus:outline-none">&times;</button>
                         <div id="status-popup-title" class="text-lg font-semibold text-white/80 mb-2 tracking-wide">
-                            {% if profile.is_missing %}
+                            {% if is_missing %}
                                 <span class="text-red-400">Danger!</span>
                             {% else %}
                                 <span class="text-yellow-300">Warning!</span>
                             {% endif %}
                         </div>
                         <div class="text-center text-white/70 text-base leading-relaxed">
-                            {% if profile.is_missing %}
+                            {% if is_missing %}
                                 You passed your <b>{{ danger_hours }}-hour</b> connection limit.<br>Check in now; your affected connections may be alerted.
                             {% else %}
                                 Your <b>{{ danger_hours }}-hour</b> connection limit is approaching.<br>Please check in before the countdown reaches danger.
@@ -1029,7 +1063,7 @@
                 <script>
                 const statusPopupKey = 'statusPopupShown:' +
                     '{{ profile.last_check_in|date:"c" }}:' +
-                    '{% if profile.is_missing %}danger{% else %}warning{% endif %}:' +
+                    '{% if is_missing %}danger{% else %}warning{% endif %}:' +
                     '{{ danger_hours }}';
                 function closeStatusPopup() {
                     document.getElementById('status-popup').style.display = 'none';
@@ -1046,8 +1080,6 @@
             {% endif %}
             {% endif %}
         {% endif %}
-
-<meta name="csrf-token" content="{{ csrf_token }}">
 
 <style>
 @keyframes fade-in {

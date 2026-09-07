@@ -1,10 +1,43 @@
 import os
 import logging
 import requests
+from concurrent.futures import ThreadPoolExecutor
+
+from django.db import close_old_connections
 
 logger = logging.getLogger(__name__)
 
 EMAILJS_SEND_URL = 'https://api.emailjs.com/api/v1.0/email/send'
+_background_executor = ThreadPoolExecutor(
+    max_workers=4,
+    thread_name_prefix='kmzh-background',
+)
+
+
+def _run_with_fresh_db_connection(callback, *args):
+    close_old_connections()
+    try:
+        return callback(*args)
+    finally:
+        close_old_connections()
+
+
+def _log_background_failure(future):
+    try:
+        future.result()
+    except Exception:
+        logger.exception('Background task failed')
+
+
+def run_in_background(callback, *args):
+    """Run non-response work without blocking the current request."""
+    future = _background_executor.submit(
+        _run_with_fresh_db_connection,
+        callback,
+        *args,
+    )
+    future.add_done_callback(_log_background_failure)
+    return future
 
 
 def reverse_geocode(lat, lng):
@@ -26,6 +59,33 @@ def reverse_geocode(lat, lng):
         return (city[:120] if city else None), (state[:120] if state else None)
     except Exception:
         return None, None
+
+
+def update_profile_location_name(profile_id, lat, lng):
+    """Reverse-geocode a saved location without delaying the response."""
+    from .models import Profile
+
+    city, state = reverse_geocode(lat, lng)
+    if not city and not state:
+        return
+    Profile.objects.filter(
+        pk=profile_id,
+        last_latitude=lat,
+        last_longitude=lng,
+    ).update(last_city=city, last_state=state)
+
+
+def send_sos_emails_for_ids(profile_id, recipient_ids):
+    """Load SOS recipients in a worker and send secondary email alerts."""
+    from .models import Profile
+
+    profile = Profile.objects.select_related('user').get(pk=profile_id)
+    recipients = list(
+        Profile.objects
+        .filter(pk__in=recipient_ids)
+        .select_related('user')
+    )
+    send_sos_via_emailjs(profile, recipients)
 
 
 def _emailjs_credentials():

@@ -9,7 +9,11 @@ from datetime import timedelta
 from allauth.account.forms import LoginForm, SignupForm
 from allauth.account.utils import perform_login
 from .models import Profile, UserPartnerMappings, SOSAlert, SOSResolvedNotification
-from .utils import send_sos_via_emailjs
+from .utils import (
+    run_in_background,
+    send_sos_emails_for_ids,
+    update_profile_location_name,
+)
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
@@ -160,10 +164,11 @@ def friends_save_emergency(request):
     except Exception:
         return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
     mappings = UserPartnerMappings.objects.filter(user=profile, is_active=True)
-    for mapping in mappings:
-        email = mapping.partner.user.email
-        mapping.is_emergency = email in emergency_emails
-        mapping.save(update_fields=['is_emergency'])
+    mappings.update(is_emergency=False)
+    if emergency_emails:
+        mappings.filter(
+            partner__user__email__in=emergency_emails,
+        ).update(is_emergency=True)
     return JsonResponse({'success': True, 'message': 'Emergency contacts saved.'})
 
 
@@ -245,9 +250,7 @@ def profile_view(request):
         if response is not None:
             return response
 
-    paired_users = [p.user for p in profile.get_partners()]
-
-    return render(request, 'core/profile.html', {'paired_users': paired_users})
+    return render(request, 'core/profile.html')
 
 
 @login_required
@@ -315,20 +318,35 @@ def home(request):
 @login_required
 def dashboard(request):
     profile = request.user.profile
-    if not profile.get_partners():
-        return redirect('link_partner')
+    has_connections = UserPartnerMappings.objects.filter(
+        user=profile,
+        is_active=True,
+    ).exists()
     has_emergency_contacts = UserPartnerMappings.objects.filter(
         user=profile, is_active=True, is_emergency=True
     ).exists()
     has_active_sos_sent = SOSAlert.objects.filter(
         from_user=profile, status=SOSAlert.Status.ACTIVE
     ).exists()
+    request._emergency_sos_active = has_active_sos_sent
+    danger_hours = profile.danger_hours
+    warning_hours = danger_hours / 2
+    elapsed = timezone.now() - profile.last_check_in
+    is_missing = has_connections and elapsed > timedelta(hours=danger_hours)
+    is_warning = has_connections and (
+        timedelta(hours=warning_hours)
+        < elapsed
+        <= timedelta(hours=danger_hours)
+    )
     return render(request, 'core/dashboard.html', {
         'profile': profile,
+        'has_connections': has_connections,
         'has_emergency_contacts': has_emergency_contacts,
         'has_active_sos_sent': has_active_sos_sent,
-        'danger_hours': profile.danger_hours,
-        'warning_hours': profile.warning_hours,
+        'danger_hours': danger_hours,
+        'warning_hours': warning_hours,
+        'is_missing': is_missing,
+        'is_warning': is_warning,
     })
 
 @login_required
@@ -351,6 +369,7 @@ def check_in(request):
         checked_in_at = timezone.now()
         profile.last_check_in = checked_in_at
         profile.alert_sent = False  # reset if was sent
+        location_changed = False
         UserPartnerMappings.objects.filter(
             user=profile,
             is_active=True,
@@ -374,13 +393,21 @@ def check_in(request):
                     profile.last_latitude = float(lat)
                     profile.last_longitude = float(lng)
                     profile.location_updated_at = timezone.now()
-                    from .utils import reverse_geocode
-                    city, state = reverse_geocode(profile.last_latitude, profile.last_longitude)
-                    profile.last_city = city
-                    profile.last_state = state
+                    location_changed = True
                 except (TypeError, ValueError):
                     pass
         profile.save()
+        if (
+            location_changed
+            and profile.last_latitude is not None
+            and profile.last_longitude is not None
+        ):
+            run_in_background(
+                update_profile_location_name,
+                profile.pk,
+                profile.last_latitude,
+                profile.last_longitude,
+            )
         return JsonResponse({
             'status': 'success',
             'checked_in_at': checked_in_at.isoformat(),
@@ -404,8 +431,9 @@ def sos_trigger(request):
         }, status=400)
     emergency_mappings = UserPartnerMappings.objects.filter(
         user=profile, is_active=True, is_emergency=True
-    )
-    if not emergency_mappings.exists():
+    ).select_related('partner')
+    emergency_profiles = [mapping.partner for mapping in emergency_mappings]
+    if not emergency_profiles:
         return JsonResponse({
             'success': False,
             'message': 'No emergency contacts. Choose them on the Friends page and save.',
@@ -416,25 +444,42 @@ def sos_trigger(request):
         lat, lng = data.get('lat'), data.get('lng')
     except Exception:
         lat, lng = None, None
+    location_changed = False
     if lat is not None and lng is not None:
         try:
             profile.last_latitude = float(lat)
             profile.last_longitude = float(lng)
             profile.location_updated_at = timezone.now()
-            from .utils import reverse_geocode
-            city, state = reverse_geocode(profile.last_latitude, profile.last_longitude)
-            profile.last_city = city
-            profile.last_state = state
+            location_changed = True
             if not profile.share_location_in_sos:
                 profile.share_location_in_sos = True
         except (TypeError, ValueError):
             pass
     profile.save()
-    emergency_profiles = []
-    for mapping in emergency_mappings:
-        SOSAlert.objects.create(from_user=profile, to_user=mapping.partner, status=SOSAlert.Status.ACTIVE)
-        emergency_profiles.append(mapping.partner)
-    send_sos_via_emailjs(profile, emergency_profiles)
+    if (
+        location_changed
+        and profile.last_latitude is not None
+        and profile.last_longitude is not None
+    ):
+        run_in_background(
+            update_profile_location_name,
+            profile.pk,
+            profile.last_latitude,
+            profile.last_longitude,
+        )
+    SOSAlert.objects.bulk_create([
+        SOSAlert(
+            from_user=profile,
+            to_user=emergency_profile,
+            status=SOSAlert.Status.ACTIVE,
+        )
+        for emergency_profile in emergency_profiles
+    ])
+    run_in_background(
+        send_sos_emails_for_ids,
+        profile.pk,
+        [recipient.pk for recipient in emergency_profiles],
+    )
     return JsonResponse({'success': True, 'message': 'SOS sent to your emergency contacts.'})
 
 

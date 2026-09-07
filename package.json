@@ -1,0 +1,25 @@
+{
+  "name": "kyamainzindahoon",
+  "version": "1.0.0",
+  "description": "A Django web app for a \"Dead Man's Switch\" where pairs of users check in to ensure each other's safety.",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i tailwind.input.css -o core/static/css/tailwind.css --minify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhishekjais-124/KyaMainZindaHoon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/abhishekjais-124/KyaMainZindaHoon/issues"
+  },
+  "homepage": "https://github.com/abhishekjais-124/KyaMainZindaHoon#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

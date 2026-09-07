@@ -1,9 +1,9 @@
-const CACHE_NAME = 'kmzh-cache-v16';
+const CACHE_NAME = 'kmzh-cache-v17';
 const urlsToCache = [
-  '/KyaMainZindaHoon/',
-  '/KyaMainZindaHoon/static/css/pwa_fullscreen.css?v=20260907-9',
-  '/KyaMainZindaHoon/static/css/mobile_bottom_nav.css?v=20260907-9',
-  '/KyaMainZindaHoon/static/css/premium.css?v=20260907-9'
+  new URL('../css/tailwind.css?v=20260908-2', self.location).toString(),
+  new URL('../css/pwa_fullscreen.css?v=20260908-1', self.location).toString(),
+  new URL('../css/mobile_bottom_nav.css?v=20260908-1', self.location).toString(),
+  new URL('../css/premium.css?v=20260908-2', self.location).toString()
 ];
 
 self.addEventListener('install', event => {
@@ -26,27 +26,32 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(response => response || caches.match('/KyaMainZindaHoon/')))
-    );
+  if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+  const staticRoot = new URL('../', self.location).pathname;
+  if (
+    requestUrl.origin !== self.location.origin ||
+    !requestUrl.pathname.startsWith(staticRoot)
+  ) {
     return;
   }
 
   event.respondWith(
     caches.match(event.request)
-      .then(response => response || fetch(event.request).then(networkResponse => {
-        if (event.request.method === 'GET' && networkResponse.ok) {
-          const copy = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      .then(response => {
+        const refresh = fetch(event.request).then(networkResponse => {
+          if (networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        });
+        if (response) {
+          refresh.catch(() => undefined);
+          return response;
         }
-        return networkResponse;
-      }))
+        return refresh;
+      })
   );
 });
