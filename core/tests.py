@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import UserPartnerMappings
 
@@ -190,3 +191,213 @@ class RelationMeterTests(TestCase):
         )
         self.mapping.refresh_from_db()
         self.assertTrue(self.mapping.heartbeat_alert_sent)
+
+
+class SosTriggerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='sos-user',
+            email='sos@example.com',
+            password='test-pass',
+        )
+        self.friend = User.objects.create_user(
+            username='sos-friend',
+            email='sos-friend@example.com',
+        )
+        self.user.profile.link_with(self.friend.profile)
+        self.mapping = UserPartnerMappings.objects.get(
+            user=self.user.profile,
+            partner=self.friend.profile,
+        )
+        self.mapping.is_emergency = True
+        self.mapping.save(update_fields=['is_emergency'])
+        self.old_check_in = datetime(
+            2026, 9, 1, 12, 0, tzinfo=datetime_timezone.utc
+        )
+        self.user.profile.last_check_in = self.old_check_in
+        self.user.profile.share_location_in_sos = False
+        self.user.profile.save(
+            update_fields=['last_check_in', 'share_location_in_sos']
+        )
+        self.client.force_login(self.user)
+
+    @patch('core.views.run_in_background')
+    def test_sos_trigger_marks_check_in(self, _background):
+        before = self.user.profile.last_check_in
+        response = self.client.post(
+            reverse('sos_trigger'),
+            data='{}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.user.profile.refresh_from_db()
+        self.assertGreater(self.user.profile.last_check_in, before)
+        self.assertIn('checked_in_at', response.json())
+
+    @patch('core.views.run_in_background')
+    def test_sos_ignores_location_when_setting_off(self, _background):
+        response = self.client.post(
+            reverse('sos_trigger'),
+            data='{"lat": 12.97, "lng": 77.59}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.profile.refresh_from_db()
+        self.assertFalse(self.user.profile.share_location_in_sos)
+        self.assertIsNone(self.user.profile.last_latitude)
+        self.assertIsNone(self.user.profile.last_longitude)
+
+    @patch('core.views.run_in_background')
+    def test_sos_stores_location_when_setting_on(self, background):
+        self.user.profile.share_location_in_sos = True
+        self.user.profile.save(update_fields=['share_location_in_sos'])
+        response = self.client.post(
+            reverse('sos_trigger'),
+            data='{"lat": 12.97, "lng": 77.59}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.profile.refresh_from_db()
+        self.assertAlmostEqual(self.user.profile.last_latitude, 12.97)
+        self.assertAlmostEqual(self.user.profile.last_longitude, 77.59)
+        self.assertIsNotNone(self.user.profile.location_updated_at)
+        background.assert_called()
+
+
+class AutoCheckinSettingTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='auto-user',
+            email='auto@example.com',
+            password='test-pass',
+        )
+        self.friend = User.objects.create_user(
+            username='auto-friend',
+            email='auto-friend@example.com',
+        )
+        self.user.profile.link_with(self.friend.profile)
+        self.client.force_login(self.user)
+
+    def test_auto_checkin_defaults_to_false(self):
+        self.assertFalse(self.user.profile.auto_checkin_on_warning_danger)
+
+    def test_settings_can_enable_auto_checkin(self):
+        response = self.client.post(
+            reverse('settings'),
+            data='{"auto_checkin_on_warning_danger": true}',
+            content_type='application/json',
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertTrue(response.json()['auto_checkin_on_warning_danger'])
+        self.user.profile.refresh_from_db()
+        self.assertTrue(self.user.profile.auto_checkin_on_warning_danger)
+
+    def test_dashboard_auto_checks_in_when_warning_and_enabled(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = True
+        # Mid warning window for default 48h danger / 24h warning
+        profile.last_check_in = timezone.now() - timedelta(hours=30)
+        profile.save(
+            update_fields=['auto_checkin_on_warning_danger', 'last_check_in']
+        )
+        before = profile.last_check_in
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['auto_checked_in'])
+        self.assertEqual(response.context['auto_checkin_state'], 'warning')
+        self.assertFalse(response.context['is_warning'])
+        self.assertFalse(response.context['is_missing'])
+        profile.refresh_from_db()
+        self.assertGreater(profile.last_check_in, before)
+        self.assertContains(response, 'Auto checked in')
+
+    def test_dashboard_auto_checks_in_when_danger_and_enabled(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = True
+        profile.last_check_in = timezone.now() - timedelta(hours=50)
+        profile.save(
+            update_fields=['auto_checkin_on_warning_danger', 'last_check_in']
+        )
+        before = profile.last_check_in
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['auto_checked_in'])
+        self.assertEqual(response.context['auto_checkin_state'], 'danger')
+        profile.refresh_from_db()
+        self.assertGreater(profile.last_check_in, before)
+
+    def test_dashboard_skips_auto_checkin_when_disabled(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = False
+        profile.last_check_in = timezone.now() - timedelta(hours=30)
+        profile.save(
+            update_fields=['auto_checkin_on_warning_danger', 'last_check_in']
+        )
+        before = profile.last_check_in
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['auto_checked_in'])
+        self.assertTrue(response.context['is_warning'])
+        profile.refresh_from_db()
+        self.assertEqual(profile.last_check_in, before)
+
+    def test_dashboard_skips_auto_checkin_when_snoozed(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = True
+        profile.snooze_enabled = True
+        profile.last_check_in = timezone.now() - timedelta(hours=50)
+        profile.save(
+            update_fields=[
+                'auto_checkin_on_warning_danger',
+                'snooze_enabled',
+                'last_check_in',
+            ]
+        )
+        before = profile.last_check_in
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['auto_checked_in'])
+        profile.refresh_from_db()
+        self.assertEqual(profile.last_check_in, before)
+
+    def test_auto_checkin_on_open_endpoint(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = True
+        profile.last_check_in = timezone.now() - timedelta(hours=30)
+        profile.save(
+            update_fields=['auto_checkin_on_warning_danger', 'last_check_in']
+        )
+        before = profile.last_check_in
+
+        response = self.client.post(reverse('auto_checkin_on_open'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['checked_in'])
+        self.assertEqual(data['state'], 'warning')
+        self.assertIn('Auto checked in', data['message'])
+        profile.refresh_from_db()
+        self.assertGreater(profile.last_check_in, before)
+
+    def test_auto_checkin_on_open_noop_when_ok(self):
+        profile = self.user.profile
+        profile.auto_checkin_on_warning_danger = True
+        profile.last_check_in = timezone.now()
+        profile.save(
+            update_fields=['auto_checkin_on_warning_danger', 'last_check_in']
+        )
+        before = profile.last_check_in
+
+        response = self.client.post(reverse('auto_checkin_on_open'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data['checked_in'])
+        self.assertEqual(data['reason'], 'ok')
+        profile.refresh_from_db()
+        self.assertEqual(profile.last_check_in, before)

@@ -7,6 +7,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('link-partner/', views.link_partner, name='link_partner'),
     path('check-in/', views.check_in, name='check_in'),
+    path('check-in/auto-on-open/', views.auto_checkin_on_open, name='auto_checkin_on_open'),
     path('profile/', views.profile_view, name='profile'),
     path('settings/', views.settings_view, name='settings'),
     path('invite_code_popup/', views.invite_code_popup, name='invite_code_popup'),

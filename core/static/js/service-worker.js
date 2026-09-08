@@ -1,9 +1,9 @@
-const CACHE_NAME = 'kmzh-cache-v17';
+const CACHE_NAME = 'kmzh-cache-v22';
 const urlsToCache = [
-  new URL('../css/tailwind.css?v=20260908-2', self.location).toString(),
-  new URL('../css/pwa_fullscreen.css?v=20260908-1', self.location).toString(),
-  new URL('../css/mobile_bottom_nav.css?v=20260908-1', self.location).toString(),
-  new URL('../css/premium.css?v=20260908-2', self.location).toString()
+  new URL('../css/tailwind.css?v=20260909-1', self.location).toString(),
+  new URL('../css/pwa_fullscreen.css?v=20260909-2', self.location).toString(),
+  new URL('../css/mobile_bottom_nav.css?v=20260909-1', self.location).toString(),
+  new URL('../css/premium.css?v=20260909-7', self.location).toString()
 ];
 
 self.addEventListener('install', event => {

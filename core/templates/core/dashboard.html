@@ -5,6 +5,45 @@
 {% load static %}
 
 {% block content %}
+{% if has_active_sos_sent %}
+<div class="sos-focus-screen" role="status" aria-live="polite">
+    <div class="sos-focus-aura" aria-hidden="true"></div>
+    <div class="sos-focus-card">
+        <div class="sos-focus-live">
+            <span class="sos-focus-live__dot" aria-hidden="true"></span>
+            SOS active
+        </div>
+        <div class="sos-focus-orb" aria-hidden="true">
+            <span class="sos-focus-orb__ring"></span>
+            <span class="sos-focus-orb__ring sos-focus-orb__ring--delay"></span>
+            <span class="sos-focus-orb__core">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 9v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M12 3.5 3.8 18.2a1.2 1.2 0 0 0 1.05 1.8h14.3a1.2 1.2 0 0 0 1.05-1.8L12 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+            </span>
+        </div>
+        <p class="sos-focus-eyebrow">Emergency in progress</p>
+        <h1 class="sos-focus-title">Help is on the way</h1>
+        <p class="sos-focus-copy">Your emergency contacts have been notified. Stay where you are if you can. This screen stays focused until someone marks your SOS as resolved.</p>
+        <ul class="sos-focus-points">
+            <li>
+                <span>1</span>
+                <p>Your trusted emergency contacts can see this alert.</p>
+            </li>
+            <li>
+                <span>2</span>
+                <p>They can open your shared location if you allowed it.</p>
+            </li>
+            <li>
+                <span>3</span>
+                <p>You cannot send another SOS until this one is closed.</p>
+            </li>
+        </ul>
+        <p class="sos-focus-wait">Waiting for resolution…</p>
+    </div>
+</div>
+{% else %}
 {% include 'core/app_icon.html' %}
 <button type="button" id="home-info-trigger" class="home-info-trigger" aria-label="Learn how to use the app" aria-haspopup="dialog" aria-controls="home-info-modal" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -32,9 +71,21 @@
                     <circle id="loader-ring" cx="144" cy="144" r="126" stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="791.6813" stroke-dashoffset="791.6813" transform="rotate(-90 144 144)" style="transition: stroke-dashoffset 0.35s linear;" />
                 </svg>
                 <span id="danger-countdown" class="danger-countdown z-10" aria-live="off">
-                    <span id="danger-countdown-label" class="danger-countdown__label">Danger in</span>
-                    <span id="danger-countdown-time" class="danger-countdown__time">{{ danger_hours }}:00:00</span>
-                    <span id="danger-countdown-units" class="danger-countdown__units">hr : min : sec</span>
+                    <span class="danger-countdown__timer">
+                        <span id="danger-countdown-label" class="danger-countdown__label">Danger in</span>
+                        <span id="danger-countdown-time" class="danger-countdown__time">{{ danger_hours }}:00:00</span>
+                        <span id="danger-countdown-units" class="danger-countdown__units">hr : min : sec</span>
+                    </span>
+                    <span class="danger-countdown__zero" aria-hidden="true">
+                        <span class="danger-countdown__zero-glow" aria-hidden="true"></span>
+                        <span class="danger-countdown__zero-eyebrow">
+                            <span class="danger-countdown__zero-live" aria-hidden="true"></span>
+                            Overdue
+                        </span>
+                        <span class="danger-countdown__zero-title">Check in</span>
+                        <span class="danger-countdown__zero-rule" aria-hidden="true"></span>
+                        <span class="danger-countdown__zero-copy">Press &amp; hold</span>
+                    </span>
                 </span>
                 <span id="loader-number" class="dashboard-loader-number text-8xl sm:text-9xl font-extrabold text-white drop-shadow-2xl select-none transition-all duration-200 z-10" style="display:none;">0</span>
                 <span id="loader-tick" style="display:none;"
@@ -86,32 +137,17 @@
             <p class="dashboard-hint text-xs sm:text-sm text-center">{% if has_connections %}Press and hold to check in{% else %}Locked until you add a connection{% endif %}</p>
             <!-- SOS Emergency button (red + disabled when active SOS; gray + disabled when no contacts; else enabled) -->
             <div class="relative inline-block group/sos">
-                <button type="button" id="sos-trigger-btn" class="sos-trigger-btn px-5 py-2.5 rounded-2xl border backdrop-blur-2xl font-semibold text-sm tracking-wide shadow-xl transition-all duration-300 touch-manipulation {% if has_active_sos_sent %}bg-red-500/80 border-red-400/60 text-white cursor-not-allowed hover:scale-100 active:scale-100{% elif not has_emergency_contacts %}border border-white/20 bg-black/40 text-white/90 opacity-50 cursor-not-allowed hover:scale-100 hover:bg-black/40 hover:border-white/20 active:scale-100 active:bg-black/40 active:border-white/20{% else %}border border-white/20 bg-black/40 text-white/90 hover:scale-125 hover:bg-red-500/80 hover:border-red-400/50 hover:text-white active:scale-125 active:bg-red-500/80 active:border-red-400/50 active:text-white{% endif %}"
-                    {% if not has_emergency_contacts or has_active_sos_sent %}disabled{% endif %}
+                <button type="button" id="sos-trigger-btn" class="sos-trigger-btn px-5 py-2.5 rounded-2xl border backdrop-blur-2xl font-semibold text-sm tracking-wide shadow-xl transition-all duration-300 touch-manipulation {% if not has_emergency_contacts %}border border-white/20 bg-black/40 text-white/90 opacity-50 cursor-not-allowed hover:scale-100 hover:bg-black/40 hover:border-white/20 active:scale-100 active:bg-black/40 active:border-white/20{% else %}border border-white/20 bg-black/40 text-white/90 hover:scale-125 hover:bg-red-500/80 hover:border-red-400/50 hover:text-white active:scale-125 active:bg-red-500/80 active:border-red-400/50 active:text-white{% endif %}"
+                    {% if not has_emergency_contacts %}disabled{% endif %}
                     data-share-location-in-sos="{% if profile.share_location_in_sos %}true{% else %}false{% endif %}">
                     SOS — Emergency
                 </button>
-                <div id="sos-tooltip" class="sos-tooltip absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-4 py-2.5 rounded-xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl text-center pointer-events-none opacity-0 invisible translate-y-1.5 transition-all duration-200 ease-out group-hover/sos:opacity-100 group-hover/sos:visible group-hover/sos:translate-y-0 whitespace-nowrap" style="{% if has_emergency_contacts and not has_active_sos_sent %}display:none;{% endif %}">
-                    <span id="sos-tooltip-text" class="text-xs font-medium text-white/90 tracking-wide">{% if has_active_sos_sent %}You have an active SOS. Wait for someone to resolve it.{% elif not has_connections %}Add a connection first{% else %}Add emergency contacts{% endif %}</span>
+                <div id="sos-tooltip" class="sos-tooltip absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-4 py-2.5 rounded-xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl text-center pointer-events-none opacity-0 invisible translate-y-1.5 transition-all duration-200 ease-out group-hover/sos:opacity-100 group-hover/sos:visible group-hover/sos:translate-y-0 whitespace-nowrap" style="{% if has_emergency_contacts %}display:none;{% endif %}">
+                    <span id="sos-tooltip-text" class="text-xs font-medium text-white/90 tracking-wide">{% if not has_connections %}Add a connection first{% else %}Add emergency contacts{% endif %}</span>
                     <span class="sos-tooltip-arrow absolute left-1/2 -translate-x-1/2 top-full mt-px w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-black/70"></span>
                 </div>
             </div>
         </div>
-
-        <!-- You triggered an SOS (triggerer sees this until someone resolves) -->
-        {% if has_active_sos_sent %}
-        <div class="dashboard-panel animate-fade-in">
-            <div class="dashboard-alert-card rounded-2xl border border-amber-500/40 bg-amber-500/10 backdrop-blur-xl py-3.5 px-4 flex items-center gap-3">
-                <span class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                </span>
-                <div>
-                    <p class="text-amber-200 font-semibold text-sm">You have triggered an SOS</p>
-                    <p class="text-amber-200/70 text-xs mt-0.5">Your emergency contacts have been notified. Wait for someone to mark it resolved. You cannot send another until this one is resolved.</p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
         {% if not has_connections %}
         <div class="dashboard-panel">
@@ -176,8 +212,10 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 <!-- Premium app guide -->
+{% if not has_active_sos_sent %}
 <div id="home-info-modal" class="home-info-modal" role="dialog" aria-modal="true" aria-labelledby="home-info-title" aria-describedby="home-info-description" aria-hidden="true">
     <section class="home-info-card">
         <header class="home-info-header">
@@ -209,7 +247,7 @@
             <li><span>5</span><p>Set a time limit for each relationship.</p></li>
             <li><span>6</span><p>Choose emergency contacts for SOS alerts.</p></li>
             <li><span>7</span><p>Use SOS only when you need urgent help.</p></li>
-            <li><span>8</span><p>Turn on location sharing in Profile if you want.</p></li>
+            <li><span>8</span><p>In Settings, turn on auto check-in to mark attendance when you open the app in warning or danger.</p></li>
             <li><span>9</span><p>Use Snooze when you need a break from check-ins.</p></li>
             <li><span>10</span><p>Only people you approve can see your status.</p></li>
         </ol>
@@ -268,8 +306,10 @@
     });
 })();
 </script>
+{% endif %}
 
 <!-- SOS 10-second countdown modal (sender) -->
+{% if not has_active_sos_sent %}
 <div id="sos-countdown-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sos-countdown-title">
     <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-8 py-8 flex flex-col items-center gap-6 max-w-sm w-full animate-pop">
         <div class="text-center">
@@ -282,6 +322,7 @@
         <button type="button" id="sos-countdown-cancel" class="w-full py-3 rounded-2xl border border-white/20 bg-white/10 text-white font-medium hover:bg-white/20 transition-all duration-300">Cancel</button>
     </div>
 </div>
+{% endif %}
 
 <!-- SOS: recipient alerts + triggerer resolved notifications (stacked at top of home) -->
 <div id="sos-dashboard-notifications" class="fixed top-4 left-4 right-4 z-[55] flex flex-col gap-3 max-w-md mx-auto">
@@ -293,7 +334,7 @@
 <div id="sos-resolve-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-md p-4" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sos-resolve-title">
     <div class="rounded-3xl border border-white/15 bg-black/60 backdrop-blur-2xl shadow-2xl px-6 py-6 max-w-sm w-full animate-pop">
         <p id="sos-resolve-title" class="text-white/90 font-semibold mb-2">Mark SOS as resolved?</p>
-        <p class="text-white/60 text-sm mb-4 leading-relaxed">If you mark this as resolved: the emergency alert will be closed, and the sender will no longer see this as an active SOS. Only mark resolved when you have confirmed they are safe.</p>
+        <p class="text-white/60 text-sm mb-4 leading-relaxed">This closes the alert. Only continue if you know they are safe.</p>
         <div class="flex gap-3">
             <button type="button" id="sos-resolve-cancel" class="flex-1 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium">Cancel</button>
             <button type="button" id="sos-resolve-confirm" class="flex-1 py-2.5 rounded-xl bg-white/20 border border-white/20 text-white text-sm font-semibold hover:bg-white/30 transition-all">Resolve</button>
@@ -301,6 +342,7 @@
     </div>
 </div>
 
+{% if not has_active_sos_sent %}
         <script>
         const loaderBtn = document.getElementById('loader-btn');
         const loaderNumber = document.getElementById('loader-number');
@@ -316,6 +358,7 @@
         const checkinGuidance = document.getElementById('checkin-guidance');
         const statusIsPaused = {{ profile.snooze_enabled|yesno:"true,false" }};
         const hasConnections = {{ has_connections|yesno:"true,false" }};
+        const autoCheckinEnabled = {{ profile.auto_checkin_on_warning_danger|yesno:"true,false" }};
         const dangerWindowMs = {{ danger_hours }} * 60 * 60 * 1000;
         const warningWindowMs = {{ warning_hours|stringformat:"g" }} * 60 * 60 * 1000;
         const ringCircumference = 2 * Math.PI * 126;
@@ -328,6 +371,9 @@
         let successTimer = null;
         let guidanceTimer = null;
         let guidanceHasShown = false;
+        let countdownBand = null;
+        let autoCheckinInFlight = false;
+        let completed = false;
 
         function hideCheckinGuidance() {
             if (guidanceTimer) {
@@ -378,6 +424,128 @@
             loaderRing.style.display = '';
             loaderRing.style.strokeDashoffset = (1 - progress) * ringCircumference;
         }
+
+        function applyCheckInSuccess(data, successMessage) {
+            const serverCheckInMs = Date.parse(data.checked_in_at);
+            if (!Number.isNaN(serverCheckInMs)) {
+                lastCheckInMs = serverCheckInMs;
+                loaderBtn.dataset.lastCheckIn = data.checked_in_at;
+            }
+            countdownBand = 'ok';
+            updateDangerCountdown(true);
+            if (statusDot) {
+                statusDot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+            }
+            if (statusSpan) {
+                statusSpan.className = 'capitalize text-green-400';
+                statusSpan.textContent = 'Active';
+            }
+            const checkInDiv = document.getElementById('check-in-time');
+            if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
+            if (typeof showMessagePopup === 'function') {
+                showMessagePopup(true, successMessage);
+            }
+            playSuccessHaptic();
+            loaderSound.currentTime = 0;
+            loaderSound.play().catch(function() {});
+        }
+
+        function submitCheckIn(options) {
+            options = options || {};
+            const successMessage = options.successMessage || null;
+            const previousCheckInMs = lastCheckInMs;
+            const shareLocation = {{ profile.share_location_with_friends|yesno:"true,false" }};
+
+            function doCheckIn(lat, lng) {
+                var opts = {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+                };
+                if (lat != null && lng != null) {
+                    opts.headers['Content-Type'] = 'application/json';
+                    opts.body = JSON.stringify({ lat: lat, lng: lng });
+                }
+                return fetch('{% url "check_in" %}', opts)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.status !== 'success') {
+                            lastCheckInMs = previousCheckInMs;
+                            loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
+                            updateDangerCountdown(true);
+                            if (typeof showMessagePopup === 'function') {
+                                showMessagePopup(false, 'Check-in failed. Please try again.');
+                            }
+                            return false;
+                        }
+                        var message = successMessage;
+                        if (!message) {
+                            message = (lat != null && lng != null)
+                                ? 'Checked in · Location shared'
+                                : 'Attendance marked · 100%';
+                        }
+                        applyCheckInSuccess(data, message);
+                        return true;
+                    })
+                    .catch(function() {
+                        lastCheckInMs = previousCheckInMs;
+                        loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
+                        updateDangerCountdown(true);
+                        if (typeof showMessagePopup === 'function') {
+                            showMessagePopup(false, 'Check-in failed. Please try again.');
+                        }
+                        return false;
+                    });
+            }
+
+            if (shareLocation && navigator.geolocation) {
+                return new Promise(function(resolve) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos) {
+                            doCheckIn(pos.coords.latitude, pos.coords.longitude).then(resolve);
+                        },
+                        function() { doCheckIn(null, null).then(resolve); },
+                        { timeout: 10000, maximumAge: 60000 }
+                    );
+                });
+            }
+            return doCheckIn(null, null);
+        }
+
+        function maybeAutoCheckIn(band) {
+            if (!autoCheckinEnabled || !hasConnections || statusIsPaused) return;
+            if (band !== 'warning' && band !== 'danger') return;
+            if (autoCheckinInFlight || animating) return;
+            autoCheckinInFlight = true;
+            const label = band === 'danger' ? 'Danger' : 'Warning';
+            submitCheckIn({
+                successMessage: 'Auto checked in · ' + label + ' window reached'
+            }).finally(function() {
+                autoCheckinInFlight = false;
+            });
+        }
+
+        window.addEventListener('kmzh:auto-checked-in', function(event) {
+            var detail = (event && event.detail) || {};
+            var serverCheckInMs = Date.parse(detail.checked_in_at);
+            if (!Number.isNaN(serverCheckInMs)) {
+                lastCheckInMs = serverCheckInMs;
+                loaderBtn.dataset.lastCheckIn = detail.checked_in_at;
+            } else {
+                lastCheckInMs = Date.now();
+                loaderBtn.dataset.lastCheckIn = new Date(lastCheckInMs).toISOString();
+            }
+            countdownBand = 'ok';
+            updateDangerCountdown(true);
+            if (statusDot) {
+                statusDot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
+            }
+            if (statusSpan) {
+                statusSpan.className = 'capitalize text-green-400';
+                statusSpan.textContent = 'Active';
+            }
+            var checkInDiv = document.getElementById('check-in-time');
+            if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
+        });
 
         function updateDangerCountdown(force) {
             if (countdownPaused && !force) return;
@@ -430,13 +598,25 @@
             }
 
             if (statusIsPaused) {
+                dangerCountdown.classList.remove('is-zero');
                 dangerCountdownLabel.textContent = 'Paused';
                 dangerCountdownUnits.textContent = 'Check-ins paused';
+            } else if (dangerReached) {
+                dangerCountdown.classList.add('is-zero');
+                dangerCountdownLabel.textContent = 'Danger';
+                dangerCountdownUnits.textContent = 'Hold to check in';
             } else {
-                dangerCountdownLabel.textContent = dangerReached ? 'Danger status' : (warningReached ? 'Warning' : 'Danger in');
-                dangerCountdownUnits.textContent = dangerReached
-                    ? 'Press and hold to check in'
-                    : 'hr : min : sec';
+                dangerCountdown.classList.remove('is-zero');
+                dangerCountdownLabel.textContent = warningReached ? 'Warning' : 'Danger in';
+                dangerCountdownUnits.textContent = 'hr : min : sec';
+            }
+            const dashboardHint = document.querySelector('.dashboard-hint');
+            if (dashboardHint && loaderBtn.dataset.hasConnections === 'true') {
+                dashboardHint.textContent = statusIsPaused
+                    ? 'Check-ins are paused'
+                    : dangerReached
+                        ? 'Your circle is waiting'
+                        : 'Press and hold to check in';
             }
             loaderBtn.setAttribute(
                 'aria-label',
@@ -446,6 +626,25 @@
                         ? 'Danger status. Press and hold to check in.'
                         : 'Press and hold to check in. Danger in ' + display + '.'
             );
+
+            const band = statusIsPaused
+                ? 'paused'
+                : dangerReached
+                    ? 'danger'
+                    : warningReached
+                        ? 'warning'
+                        : 'ok';
+            if (countdownBand === null) {
+                countdownBand = band;
+            } else if (countdownBand !== band) {
+                const previousBand = countdownBand;
+                countdownBand = band;
+                const enteredFromOk = previousBand === 'ok' && (band === 'warning' || band === 'danger');
+                const escalatedToDanger = previousBand === 'warning' && band === 'danger';
+                if (enteredFromOk || escalatedToDanger) {
+                    maybeAutoCheckIn(band);
+                }
+            }
         }
 
         function showDangerCountdown() {
@@ -478,69 +677,11 @@
                     showDangerCountdown();
                 }, 1800);
 
-                const previousCheckInMs = lastCheckInMs;
                 lastCheckInMs = Date.now();
                 loaderBtn.dataset.lastCheckIn = new Date(lastCheckInMs).toISOString();
+                countdownBand = 'ok';
                 updateDangerCountdown(true);
-                // Update last check-in time (with optional location if sharing enabled)
-                var shareLocation = {{ profile.share_location_with_friends|yesno:"true,false" }};
-                function doCheckIn(lat, lng) {
-                    var opts = { method: 'POST', headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content } };
-                    if (lat != null && lng != null) {
-                        opts.headers['Content-Type'] = 'application/json';
-                        opts.body = JSON.stringify({ lat: lat, lng: lng });
-                    }
-                    fetch('{% url "check_in" %}', opts)
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                    if (data.status !== 'success') {
-                        lastCheckInMs = previousCheckInMs;
-                        loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
-                        updateDangerCountdown(true);
-                        if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
-                        return;
-                    }
-                    const serverCheckInMs = Date.parse(data.checked_in_at);
-                    if (!Number.isNaN(serverCheckInMs)) {
-                        lastCheckInMs = serverCheckInMs;
-                        loaderBtn.dataset.lastCheckIn = data.checked_in_at;
-                    }
-                    updateDangerCountdown(true);
-                    // Update status card without reload
-                    if (statusDot) {
-                        statusDot.className = 'inline-block w-5 h-5 rounded-full bg-green-400 shadow-lg';
-                    }
-                    if (statusSpan) {
-                        statusSpan.className = 'capitalize text-green-400';
-                        statusSpan.textContent = 'Active';
-                    }
-                    const checkInDiv = document.getElementById('check-in-time');
-                    if (checkInDiv) checkInDiv.textContent = 'Check-in: Just now';
-                    // Confirm 100% attendance marked
-                    if (typeof showMessagePopup === 'function') showMessagePopup(true, (lat != null && lng != null) ? 'Checked in · Location shared' : 'Attendance marked · 100%');
-                    // Pair the success sound with a short rising confirmation haptic.
-                    playSuccessHaptic();
-                    loaderSound.currentTime = 0;
-                    loaderSound.play().catch(function() {
-                        // Haptic confirmation still works when autoplay blocks sound.
-                    });
-                })
-                .catch(function() {
-                    lastCheckInMs = previousCheckInMs;
-                    loaderBtn.dataset.lastCheckIn = new Date(previousCheckInMs).toISOString();
-                    updateDangerCountdown(true);
-                    if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Check-in failed. Please try again.');
-                });
-                }
-                if (shareLocation && navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        function(pos) { doCheckIn(pos.coords.latitude, pos.coords.longitude); },
-                        function() { doCheckIn(null, null); },
-                        { timeout: 10000, maximumAge: 60000 }
-                    );
-                } else {
-                    doCheckIn(null, null);
-                }
+                submitCheckIn();
                 return;
             } else {
                 loaderTick.style.display = 'none';
@@ -584,7 +725,6 @@
         }
         let holdTimeout = null;
         let startTime = null;
-        let completed = false;
         function clearUiSelection() {
             var selection = window.getSelection && window.getSelection();
             if (selection && selection.removeAllRanges) selection.removeAllRanges();
@@ -649,6 +789,7 @@
         } else {
             loaderBtn.classList.remove('countdown-active', 'countdown-warning', 'countdown-danger', 'countdown-paused');
             loaderBtn.classList.add('is-locked');
+            if (dangerCountdown) dangerCountdown.classList.remove('is-zero');
             if (dangerCountdownLabel) dangerCountdownLabel.textContent = 'Locked';
             if (dangerCountdownTime) dangerCountdownTime.textContent = '--:--:--';
             if (dangerCountdownUnits) dangerCountdownUnits.textContent = 'add a connection';
@@ -702,14 +843,15 @@
                                     if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Failed to send SOS.');
                                 });
                         };
-                        if (navigator.geolocation) {
+                        var shareLocationInSos = triggerBtn && triggerBtn.getAttribute('data-share-location-in-sos') === 'true';
+                        if (shareLocationInSos && navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(
                                 function(pos) {
                                     doTrigger({ lat: pos.coords.latitude, lng: pos.coords.longitude });
                                 },
                                 function() {
                                     doTrigger({});
-                                    if (typeof showMessagePopup === 'function') showMessagePopup(false, 'SOS sent without location. Grant location when triggering to share with emergency contacts.');
+                                    if (typeof showMessagePopup === 'function') showMessagePopup(false, 'SOS sent without location. Allow location access to share it with emergency contacts.');
                                 },
                                 { timeout: 12000, maximumAge: 60000 }
                             );
@@ -767,6 +909,7 @@
             });
         })();
         </script>
+{% endif %}
 
         <!-- SOS: recipient alerts + poll + resolve -->
         <script>
@@ -795,41 +938,52 @@
                     var hasCoords = typeof a.lat === 'number' && typeof a.lng === 'number';
                     var placeText = a.location || (hasCoords ? (Number(a.lat).toFixed(5) + ', ' + Number(a.lng).toFixed(5)) : '');
                     var updatedText = a.location_updated_at ? ('Updated ' + formatSosTime(a.location_updated_at)) : '';
-                    var locationLine = (placeText || hasCoords) ? (
-                        '<div class="mt-2 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2.5">' +
-                        '<p class="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300/80">Last known location</p>' +
-                        '<p class="text-sm font-semibold text-white/90 mt-0.5">' + escapeHtml(placeText || 'Location shared') + '</p>' +
-                        (updatedText ? ('<p class="text-[11px] text-white/45 mt-0.5">' + escapeHtml(updatedText) + '</p>') : '') +
-                        '</div>'
+                    var name = escapeHtml(a.from_name || a.from_username || a.from_email || 'Someone');
+                    var locationBlock = (placeText || hasCoords) ? (
+                        '<div class="sos-alert-location">' +
+                        '<div class="sos-alert-location__icon" aria-hidden="true">' +
+                        '<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>' +
+                        '</div>' +
+                        '<div class="sos-alert-location__body">' +
+                        '<p class="sos-alert-location__label">Last known location</p>' +
+                        '<p class="sos-alert-location__place">' + escapeHtml(placeText || 'Location shared') + '</p>' +
+                        (updatedText ? ('<p class="sos-alert-location__meta">' + escapeHtml(updatedText) + '</p>') : '') +
+                        '</div></div>'
                     ) : '';
-                    var contactLine = a.from_email ? ('<p class="text-xs text-white/50 mt-0.5">Contact: ' + escapeHtml(a.from_email) + '</p>') : '';
+                    var contactLine = a.from_email ? ('<p class="sos-alert-contact">' + escapeHtml(a.from_email) + '</p>') : '';
                     var latAttr = hasCoords ? (' data-lat="' + a.lat + '"') : '';
                     var lngAttr = hasCoords ? (' data-lng="' + a.lng + '"') : '';
-                    var locateBtn = '<button type="button" class="sos-alert-locate py-2 px-4 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-all flex-shrink-0" title="Open in Google Maps"' + latAttr + lngAttr + '>Locate</button>';
-                    return '<div class="sos-alert-card rounded-2xl border-2 border-red-500/50 bg-black/50 backdrop-blur-2xl shadow-2xl px-4 py-4 flex flex-col sm:flex-row gap-3 animate-pop" data-alert-id="' + a.id + '">' +
-                        '<div class="flex-1 min-w-0 order-1">' +
-                        '<p class="font-semibold text-white/95">' +
-                        '<span class="text-red-400 font-bold">' + escapeHtml(a.from_name || a.from_username || a.from_email || 'Someone') + '</span> needs help</p>' +
-                        '<p class="text-xs text-white/50 mt-0.5">Emergency SOS · ' + timeStr + '</p>' +
+                    var locateDisabled = hasCoords ? '' : ' is-disabled';
+                    var locateTitle = hasCoords ? 'Open in Google Maps' : 'Location was not shared';
+                    return '<article class="sos-alert-card" data-alert-id="' + a.id + '" role="alert">' +
+                        '<div class="sos-alert-card__glow" aria-hidden="true"></div>' +
+                        '<header class="sos-alert-card__header">' +
+                        '<span class="sos-alert-badge"><span class="sos-alert-badge__dot" aria-hidden="true"></span>Emergency SOS</span>' +
+                        '<p class="sos-alert-time">' + timeStr + '</p>' +
+                        '</header>' +
+                        '<div class="sos-alert-card__body">' +
+                        '<span class="sos-alert-avatar" aria-hidden="true">' +
+                        '<svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 3.5 3.8 18.2a1.2 1.2 0 0 0 1.05 1.8h14.3a1.2 1.2 0 0 0 1.05-1.8L12 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>' +
+                        '</span>' +
+                        '<div class="sos-alert-copy">' +
+                        '<h3 class="sos-alert-title"><span>' + name + '</span> needs help</h3>' +
                         contactLine +
-                        locationLine +
-                        '</div>' +
-                        '<div class="flex items-center gap-2 flex-shrink-0 order-2 sm:order-3">' +
-                        '<button type="button" class="sos-alert-dismiss w-9 h-9 rounded-xl border border-white/15 bg-white/5 flex items-center justify-center text-white/70 hover:bg-white/15 transition-all" title="Dismiss">×</button>' +
-                        locateBtn +
-                        '<button type="button" class="sos-alert-resolve py-2 px-4 rounded-xl border border-white/20 bg-white/15 text-white text-sm font-medium hover:bg-white/25 transition-all">Resolve</button>' +
-                        '</div>' +
-                        '</div>';
+                        '</div></div>' +
+                        locationBlock +
+                        '<div class="sos-alert-actions">' +
+                        '<button type="button" class="sos-alert-locate' + locateDisabled + '" title="' + locateTitle + '"' + latAttr + lngAttr + '>' +
+                        '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg>' +
+                        'Locate</button>' +
+                        '<button type="button" class="sos-alert-resolve">Resolve</button>' +
+                        '</div></article>';
                 }).join('');
 
-                container.querySelectorAll('.sos-alert-dismiss').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        var card = btn.closest('.sos-alert-card');
-                        if (card) card.style.display = 'none';
-                    });
-                });
                 container.querySelectorAll('.sos-alert-locate').forEach(function(btn) {
                     btn.addEventListener('click', function() {
+                        if (btn.classList.contains('is-disabled')) {
+                            if (typeof showMessagePopup === 'function') showMessagePopup(false, 'Location was not shared by the sender.');
+                            return;
+                        }
                         var lat = btn.getAttribute('data-lat');
                         var lng = btn.getAttribute('data-lng');
                         if (lat != null && lng != null) {
@@ -1038,7 +1192,7 @@
         </script>
 
         <!-- Status Popup (Warning/Danger) - only when not snoozed -->
-        {% if has_connections and profile and profile.last_check_in %}
+        {% if not has_active_sos_sent and has_connections and profile and profile.last_check_in %}
             {% if not profile.snooze_enabled %}
             {% if is_missing or is_warning %}
                 <div id="status-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-pop p-4" style="display:none;" role="alertdialog" aria-modal="true" aria-labelledby="status-popup-title">
@@ -1081,6 +1235,20 @@
             {% endif %}
         {% endif %}
 
+{% if auto_checked_in %}
+<script>
+document.body.dataset.autoCheckedIn = '1';
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof showMessagePopup !== 'function') return;
+    var state = '{{ auto_checkin_state|default:"warning" }}';
+    var label = state === 'danger' ? 'Danger' : 'Warning';
+    setTimeout(function() {
+        showMessagePopup(true, 'Auto checked in · ' + label + ' window reached');
+    }, 450);
+});
+</script>
+{% endif %}
+
 <style>
 @keyframes fade-in {
     from {
@@ -1120,12 +1288,8 @@
 }
 
 @keyframes sos-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-}
-.sos-alert-card {
-    animation: sos-pulse 2s ease-in-out infinite;
-    border-color: rgba(239,68,68,0.5) !important;
+    0%, 100% { box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 113, 133, 0.18), 0 0 0 0 rgba(239, 68, 68, 0.35); }
+    50% { box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 113, 133, 0.28), 0 0 0 10px rgba(239, 68, 68, 0); }
 }
 </style>
 {% endblock %}

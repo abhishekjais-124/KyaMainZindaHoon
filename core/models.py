@@ -22,6 +22,7 @@ class Profile(models.Model):
     share_location_with_friends = models.BooleanField(default=False)
     share_location_in_sos = models.BooleanField(default=False)
     snooze_enabled = models.BooleanField(default=False)
+    auto_checkin_on_warning_danger = models.BooleanField(default=False)
     last_latitude = models.FloatField(null=True, blank=True)
     last_longitude = models.FloatField(null=True, blank=True)
     location_updated_at = models.DateTimeField(null=True, blank=True)

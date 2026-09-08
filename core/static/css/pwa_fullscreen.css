@@ -6,9 +6,10 @@ html {
   background: #080c12;
 }
 body {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   min-height: 100lvh;
-  min-width: 100vw;
   background: #080c12;
   /* Only top/side safe areas here. Bottom is handled by the floating nav
      offset in premium.css — body padding-bottom creates a black strip. */
@@ -16,4 +17,5 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   padding-bottom: 0;
+  overflow-x: hidden;
 }

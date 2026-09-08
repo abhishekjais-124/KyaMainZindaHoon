@@ -12,8 +12,8 @@
   </a>
 </div>
 
-<div class="settings-page min-h-screen w-full flex flex-col items-center px-4 pt-28 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800">
-  <div class="w-full max-w-sm flex flex-col gap-5">
+<div class="settings-page min-h-screen w-full flex flex-col items-center px-4 pt-20 pb-28 bg-gradient-to-br from-black via-gray-900 to-gray-800">
+  <div class="w-full max-w-sm flex flex-col gap-4">
     <div class="text-center">
       <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-300/70 mb-2">Your control</p>
       <h1 class="text-2xl font-bold text-white/95 tracking-tight">Settings</h1>
@@ -46,6 +46,19 @@
           </span>
         </label>
         <input type="checkbox" id="share-location-in-sos-switch" class="settings-switch" {% if profile.share_location_in_sos %}checked{% endif %} data-csrf="{{ csrf_token }}">
+      </div>
+      <!-- Auto check-in -->
+      <div class="flex items-center justify-between gap-4 px-4 py-4">
+        <label for="auto-checkin-switch" class="flex-1 cursor-pointer min-w-0 flex items-start gap-3">
+          <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-300/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <span class="min-w-0">
+            <p class="text-sm font-semibold text-white/95 leading-snug">Auto check-in on warning or danger</p>
+            <p class="text-xs text-white/45 mt-0.5">When you open the app in warning or danger, check in automatically and notify you</p>
+          </span>
+        </label>
+        <input type="checkbox" id="auto-checkin-switch" class="settings-switch" {% if profile.auto_checkin_on_warning_danger %}checked{% endif %} data-csrf="{{ csrf_token }}">
       </div>
       <!-- Snooze -->
       <div class="flex items-center justify-between gap-4 px-4 py-4 bg-black/20">
@@ -177,6 +190,27 @@
       } else {
         saveShareLocationInSos(false);
       }
+    });
+  }
+  var autoCheckinSwitch = document.getElementById('auto-checkin-switch');
+  if (autoCheckinSwitch) {
+    autoCheckinSwitch.addEventListener('change', function() {
+      var enabled = autoCheckinSwitch.checked;
+      fetch('{% url "settings" %}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ auto_checkin_on_warning_danger: enabled })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success) autoCheckinSwitch.checked = !enabled;
+      })
+      .catch(function() { autoCheckinSwitch.checked = !enabled; });
     });
   }
   var snoozeSwitch = document.getElementById('snooze-switch');

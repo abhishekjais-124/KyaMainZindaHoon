@@ -31,6 +31,87 @@ def _invite_link_response(request, profile, invite_code, success_redirect):
     return None
 
 
+def _apply_check_in(profile, lat=None, lng=None):
+    """
+    Mark attendance for profile. Optionally store lat/lng when location sharing is on.
+    Returns (checked_in_at, location_changed).
+    """
+    checked_in_at = timezone.now()
+    profile.last_check_in = checked_in_at
+    profile.alert_sent = False
+    UserPartnerMappings.objects.filter(
+        user=profile,
+        is_active=True,
+    ).update(heartbeat_alert_sent=False)
+
+    location_changed = False
+    if profile.share_location_with_friends and lat is not None and lng is not None:
+        try:
+            profile.last_latitude = float(lat)
+            profile.last_longitude = float(lng)
+            profile.location_updated_at = timezone.now()
+            location_changed = True
+        except (TypeError, ValueError):
+            pass
+
+    profile.save()
+    if (
+        location_changed
+        and profile.last_latitude is not None
+        and profile.last_longitude is not None
+    ):
+        run_in_background(
+            update_profile_location_name,
+            profile.pk,
+            profile.last_latitude,
+            profile.last_longitude,
+        )
+    return checked_in_at, location_changed
+
+
+def _alert_band_for_profile(profile):
+    """
+    Return ('danger'|'warning'|None, has_connections) for the user's check-in window.
+    """
+    has_connections = UserPartnerMappings.objects.filter(
+        user=profile,
+        is_active=True,
+    ).exists()
+    if not has_connections or profile.snooze_enabled:
+        return None, has_connections
+
+    danger_hours = profile.danger_hours
+    warning_hours = danger_hours / 2
+    elapsed = timezone.now() - profile.last_check_in
+    if elapsed > timedelta(hours=danger_hours):
+        return 'danger', has_connections
+    if timedelta(hours=warning_hours) < elapsed <= timedelta(hours=danger_hours):
+        return 'warning', has_connections
+    return None, has_connections
+
+
+def _maybe_auto_checkin(profile, lat=None, lng=None):
+    """
+    If auto-check-in is enabled and the user is in warning/danger (and not SOS/snooze),
+    perform a check-in. Returns (did_check_in, state, checked_in_at).
+    """
+    if not profile.auto_checkin_on_warning_danger:
+        return False, None, None
+    if profile.snooze_enabled:
+        return False, None, None
+    if SOSAlert.objects.filter(
+        from_user=profile, status=SOSAlert.Status.ACTIVE
+    ).exists():
+        return False, None, None
+
+    band, _has_connections = _alert_band_for_profile(profile)
+    if band is None:
+        return False, None, None
+
+    checked_in_at, _ = _apply_check_in(profile, lat=lat, lng=lng)
+    return True, band, checked_in_at
+
+
 def alert_danger(request):
     return render(request, 'core/message_popup.html', {'message_title': 'Danger!', 'message_text': 'This is a danger alert.', 'message_type': 'danger'})
 
@@ -268,12 +349,17 @@ def settings_view(request):
                     profile.share_location_in_sos = bool(data['share_location_in_sos'])
                 if 'snooze_enabled' in data:
                     profile.snooze_enabled = bool(data['snooze_enabled'])
+                if 'auto_checkin_on_warning_danger' in data:
+                    profile.auto_checkin_on_warning_danger = bool(
+                        data['auto_checkin_on_warning_danger']
+                    )
                 profile.save()
                 return JsonResponse({
                     'success': True,
                     'share_location_with_friends': profile.share_location_with_friends,
                     'share_location_in_sos': profile.share_location_in_sos,
                     'snooze_enabled': profile.snooze_enabled,
+                    'auto_checkin_on_warning_danger': profile.auto_checkin_on_warning_danger,
                 })
             except Exception:
                 return JsonResponse({'success': False}, status=400)
@@ -283,6 +369,10 @@ def settings_view(request):
             profile.share_location_in_sos = request.POST.get('share_location_in_sos') == 'on'
         if 'snooze_enabled' in request.POST:
             profile.snooze_enabled = request.POST.get('snooze_enabled') == 'on'
+        if 'auto_checkin_on_warning_danger' in request.POST:
+            profile.auto_checkin_on_warning_danger = (
+                request.POST.get('auto_checkin_on_warning_danger') == 'on'
+            )
         profile.save()
         return redirect('settings')
     return render(request, 'core/settings.html', {'profile': profile})
@@ -338,6 +428,17 @@ def dashboard(request):
         < elapsed
         <= timedelta(hours=danger_hours)
     )
+
+    auto_checked_in = False
+    auto_checkin_state = None
+    did_auto, auto_state, checked_in_at = _maybe_auto_checkin(profile)
+    if did_auto:
+        auto_checked_in = True
+        auto_checkin_state = auto_state
+        profile.last_check_in = checked_in_at
+        is_missing = False
+        is_warning = False
+
     return render(request, 'core/dashboard.html', {
         'profile': profile,
         'has_connections': has_connections,
@@ -347,6 +448,8 @@ def dashboard(request):
         'warning_hours': warning_hours,
         'is_missing': is_missing,
         'is_warning': is_warning,
+        'auto_checked_in': auto_checked_in,
+        'auto_checkin_state': auto_checkin_state,
     })
 
 @login_required
@@ -366,53 +469,70 @@ def link_partner(request):
 def check_in(request):
     if request.method == 'POST':
         profile = request.user.profile
-        checked_in_at = timezone.now()
-        profile.last_check_in = checked_in_at
-        profile.alert_sent = False  # reset if was sent
-        location_changed = False
-        UserPartnerMappings.objects.filter(
-            user=profile,
-            is_active=True,
-        ).update(heartbeat_alert_sent=False)
-        # Store location when sharing is enabled (from JSON or form)
-        if profile.share_location_with_friends:
-            lat, lng = None, None
-            if request.headers.get('content-type', '').startswith('application/json'):
-                try:
-                    import json
-                    data = json.loads(request.body)
-                    lat = data.get('lat')
-                    lng = data.get('lng')
-                except Exception:
-                    pass
-            else:
-                lat = request.POST.get('lat')
-                lng = request.POST.get('lng')
-            if lat is not None and lng is not None:
-                try:
-                    profile.last_latitude = float(lat)
-                    profile.last_longitude = float(lng)
-                    profile.location_updated_at = timezone.now()
-                    location_changed = True
-                except (TypeError, ValueError):
-                    pass
-        profile.save()
-        if (
-            location_changed
-            and profile.last_latitude is not None
-            and profile.last_longitude is not None
-        ):
-            run_in_background(
-                update_profile_location_name,
-                profile.pk,
-                profile.last_latitude,
-                profile.last_longitude,
-            )
+        lat, lng = None, None
+        if request.headers.get('content-type', '').startswith('application/json'):
+            try:
+                import json
+                data = json.loads(request.body)
+                lat = data.get('lat')
+                lng = data.get('lng')
+            except Exception:
+                pass
+        else:
+            lat = request.POST.get('lat')
+            lng = request.POST.get('lng')
+        checked_in_at, _ = _apply_check_in(profile, lat=lat, lng=lng)
         return JsonResponse({
             'status': 'success',
             'checked_in_at': checked_in_at.isoformat(),
         })
     return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+@require_POST
+def auto_checkin_on_open(request):
+    """
+    App-open / resume hook: if auto-check-in is enabled and the user is in
+    warning or danger, mark attendance and report it to the client.
+    """
+    profile = request.user.profile
+    lat, lng = None, None
+    if request.headers.get('content-type', '').startswith('application/json'):
+        try:
+            import json
+            data = json.loads(request.body) or {}
+            lat = data.get('lat')
+            lng = data.get('lng')
+        except Exception:
+            lat, lng = None, None
+
+    did_check_in, band, checked_in_at = _maybe_auto_checkin(
+        profile, lat=lat, lng=lng
+    )
+    if not did_check_in:
+        reason = 'disabled'
+        if not profile.auto_checkin_on_warning_danger:
+            reason = 'disabled'
+        elif profile.snooze_enabled:
+            reason = 'snoozed'
+        elif SOSAlert.objects.filter(
+            from_user=profile, status=SOSAlert.Status.ACTIVE
+        ).exists():
+            reason = 'sos_active'
+        else:
+            reason = 'ok'
+        return JsonResponse({'checked_in': False, 'reason': reason})
+
+    return JsonResponse({
+        'checked_in': True,
+        'state': band,
+        'checked_in_at': checked_in_at.isoformat(),
+        'message': (
+            f"Auto checked in · {'Danger' if band == 'danger' else 'Warning'} "
+            'window reached'
+        ),
+    })
 
 
 # --- SOS (emergency) feature ---
@@ -421,8 +541,8 @@ def check_in(request):
 @require_POST
 def sos_trigger(request):
     """Create active SOS alerts only to emergency contacts. Called after 10s countdown (no cancel).
-    Optional JSON body: { "lat": <float>, "lng": <float> }. If provided, store location and
-    enable share_location_in_sos if it was off (user granted location from SOS button)."""
+    Also marks a check-in at trigger time. Location is stored only when share_location_in_sos is on.
+    Optional JSON body: { "lat": <float>, "lng": <float> }."""
     profile = request.user.profile
     if SOSAlert.objects.filter(from_user=profile, status=SOSAlert.Status.ACTIVE).exists():
         return JsonResponse({
@@ -438,21 +558,32 @@ def sos_trigger(request):
             'success': False,
             'message': 'No emergency contacts. Choose them on the Friends page and save.',
         }, status=400)
-    # Optional location: if sent with SOS, store it and enable share_location_in_sos if not already
+
+    checked_in_at = timezone.now()
+    profile.last_check_in = checked_in_at
+    profile.alert_sent = False
+    UserPartnerMappings.objects.filter(
+        user=profile,
+        is_active=True,
+    ).update(heartbeat_alert_sent=False)
+
+    # Location: only when the SOS location setting is enabled
     try:
         data = __import__('json').loads(request.body) if request.body else {}
         lat, lng = data.get('lat'), data.get('lng')
     except Exception:
         lat, lng = None, None
     location_changed = False
-    if lat is not None and lng is not None:
+    if (
+        profile.share_location_in_sos
+        and lat is not None
+        and lng is not None
+    ):
         try:
             profile.last_latitude = float(lat)
             profile.last_longitude = float(lng)
             profile.location_updated_at = timezone.now()
             location_changed = True
-            if not profile.share_location_in_sos:
-                profile.share_location_in_sos = True
         except (TypeError, ValueError):
             pass
     profile.save()
@@ -480,7 +611,11 @@ def sos_trigger(request):
         profile.pk,
         [recipient.pk for recipient in emergency_profiles],
     )
-    return JsonResponse({'success': True, 'message': 'SOS sent to your emergency contacts.'})
+    return JsonResponse({
+        'success': True,
+        'message': 'SOS sent to your emergency contacts.',
+        'checked_in_at': checked_in_at.isoformat(),
+    })
 
 
 @login_required
